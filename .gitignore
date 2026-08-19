@@ -1,4 +1,6 @@
 node_modules
+node_modules.install-recovery*/
+tsconfig.tsbuildinfo
 .next
 out
 .env
