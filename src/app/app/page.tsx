@@ -20,7 +20,7 @@ export default async function HomePage() {
   const companyId = membership?.company_id
   const companyName = Array.isArray(membership?.companies)
     ? membership.companies[0]?.name
-    : (membership?.companies as { name?: string } | null)?.name
+    : (membership?.companies as unknown as { name?: string } | null)?.name
 
   const { data: metrics } = companyId
     ? await supabase.rpc('get_overview_metrics', { target_company_id: companyId })

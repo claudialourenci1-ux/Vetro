@@ -1,191 +1,38 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { ArrowRight, BarChart3, BellRing, Building2, ChevronDown, Menu, Network, Sparkles, Users } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
 
-const whatsappMessage = encodeURIComponent(
-  'Olá! Conheci a VETRO pelo site e quero entender como a plataforma pode ser implementada na operação comercial da minha incorporadora.'
-)
-const whatsappUrl = `https://wa.me/55944511771?text=${whatsappMessage}`
+export const commercialWhatsappUrl = `https://wa.me/5511944511771?text=${encodeURIComponent('Olá! Conheci a VETRO pelo site e quero entender como a plataforma pode ser implementada na operação comercial da minha incorporadora.')}`
+const modules = [['Parceiros','Relacionamento, performance e força comercial.',Users],['Pipeline','Oportunidades, propostas e negociações.',Network],['Empreendimentos','Performance, VGV e comportamento comercial.',Building2],['Intelligence','Dados transformados em leitura e recomendação.',Sparkles],['Equipe','Gestores, carteiras, atividades e performance.',BarChart3]] as const
+const pillars = [['V1','Relacionamento','Qualidade e frequência da relação.'],['V2','Ativação','Mobilização do parceiro.'],['V3','Oportunidades','Geração real de negócios.'],['V4','Conversão','Eficiência em transformar oportunidade em venda.'],['V5','Valor','Impacto econômico e VGV.'],['V6','Consistência','Capacidade de sustentar performance.']] as const
+const signals = [['Parceiro estratégico perdendo atividade','Uma imobiliária relevante reduziu as interações nos últimos 14 dias.','14:42'],['Alta ativação, baixa conversão','Há propostas ativas, mas a taxa de fechamento exige atenção.','11:08'],['Parceiro emergente','A recorrência de oportunidades cresceu 32% neste ciclo.','09:26'],['Dependência comercial','O resultado está concentrado em uma parcela pequena da rede.','Ontem'],['Oportunidades sem movimentação','Existem negociações que precisam de uma nova ação comercial.','Ontem']] as const
+const reveal = { hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0 } }
 
-const modules = [
-  ['Parceiros','Saiba quem está ativo, quem gera resultado, quem cresce e quem precisa de atenção.'],
-  ['Pipeline','Acompanhe oportunidades, propostas, negociações e vendas em uma visão única.'],
-  ['Empreendimentos','Compare performance, VGV, velocidade, conversão e comportamento comercial.'],
-  ['Equipe','Entenda gestores, carteiras, atividades, produtividade e resultado.'],
-  ['Intelligence','Cruze histórico, comportamento e sinais para apoiar decisões comerciais.'],
-  ['V6 Method','Transforme relacionamento e resultado em uma leitura proprietária sobre parceiros.'],
-] as const
+function Brand({ priority = false }: { priority?: boolean }) { return <Image className="vetro-logo" src="/brand/vetro-logo-light.png" alt="VETRO" width={254} height={76} priority={priority} /> }
+function Cta({ children, className = '' }: { children: React.ReactNode, className?: string }) { return <a className={`vetro-cta ${className}`} href={commercialWhatsappUrl} target="_blank" rel="noreferrer"><span>{children}</span><ArrowRight size={17}/></a> }
+function Section({ children, className = '', id }: { children: React.ReactNode, className?: string, id?: string }) { return <section id={id} className={`vetro-section ${className}`}>{children}</section> }
 
-const pillars = [
-  ['V1','Relacionamento','Qualidade, frequência e continuidade da relação com cada parceiro.'],
-  ['V2','Ativação','O quanto a imobiliária está mobilizada para trabalhar seus empreendimentos.'],
-  ['V3','Oportunidades','Capacidade de gerar atendimentos, propostas e movimento real no pipeline.'],
-  ['V4','Conversão','Eficiência para transformar oportunidade comercial em venda.'],
-  ['V5','Valor','Impacto financeiro, VGV e relevância econômica produzida pelo parceiro.'],
-  ['V6','Consistência','Capacidade de sustentar resultado e atividade ao longo do tempo.'],
-] as const
-
-const signals = [
-  ['Parceiro estratégico perdendo atividade','Uma imobiliária relevante está há semanas sem interação comercial.'],
-  ['Alta ativação, baixa conversão','Existe relacionamento e proposta, mas algo está impedindo o fechamento.'],
-  ['Parceiro emergente','Uma imobiliária ainda pequena começa a acelerar oportunidades e recorrência.'],
-  ['Dependência comercial','Grande parte do resultado está concentrada em poucos corretores ou produtos.'],
-] as const
-
-function Brand({ large = false }: { large?: boolean }) {
-  return (
-    <span className={`landing-brand-lockup ${large ? 'large' : ''}`}>
-      <span className="landing-symbol" aria-hidden="true"><i/><i/><i/></span>
-      <span className="landing-word">VETRO</span>
-    </span>
-  )
-}
-
-function Cta({ children }: { children: React.ReactNode }) {
-  return (
-    <a className="landing-cta" href={whatsappUrl} target="_blank" rel="noreferrer">
-      <span>{children}</span><b aria-hidden="true">↗</b>
-    </a>
-  )
-}
-
-function ProductMock({ large = false }: { large?: boolean }) {
-  const cards = [
-    ['VGV DO MÊS','R$ 48,6M','+12,4%'],
-    ['PARCEIROS ESTRATÉGICOS','128','+8 novos'],
-    ['OPORTUNIDADES ATIVAS','312','+15,7%'],
-    ['CONVERSÃO','21,6%','+3,2 p.p.'],
-    ['VETRO SCORE MÉDIO','78','+5 pts'],
-  ]
-
-  return (
-    <div className={`landing-dashboard ${large ? 'large' : ''}`}>
-      <aside className="landing-dashboard-sidebar">
-        <span className="landing-symbol mini"><i/><i/><i/></span>
-        {Array.from({ length: 5 }).map((_, i) => <span className="landing-menu-stub" key={i}/>) }
-      </aside>
-      <div className="landing-dashboard-main">
-        <div className="landing-dashboard-top">
-          <div><strong>Bom dia, time Vetro!</strong><small>Desempenho comercial atualizado</small></div>
-          <button>Filtros</button>
-        </div>
-        <div className="landing-dashboard-cards">
-          {cards.map(([label,value,delta]) => (
-            <article key={label}><small>{label}</small><strong>{value}</strong><em>{delta}</em></article>
-          ))}
-        </div>
-        <div className="landing-dashboard-lower">
-          <section className="landing-chart-card">
-            <small>VGV ACUMULADO</small><strong>R$ 212,7M</strong>
-            <svg viewBox="0 0 500 150" preserveAspectRatio="none" aria-hidden="true">
-              <defs><linearGradient id={large ? 'landingGradientLarge' : 'landingGradient'}><stop stopColor="#6d28d9"/><stop offset="1" stopColor="#b69cff"/></linearGradient></defs>
-              <path d="M0 128 C45 121 80 109 112 104 S166 95 196 89 S241 77 271 72 S330 62 360 51 S422 45 500 19" fill="none" stroke={`url(#${large ? 'landingGradientLarge' : 'landingGradient'})`} strokeWidth="5"/>
-            </svg>
-          </section>
-          <section className="landing-ranking-card">
-            <small>RANKING DE PARCEIROS</small>
-            {['Partner Prime','Imobi House','Link Imóveis','Conecta Brokers'].map((name,i) => (
-              <p key={name}><b>{i+1}</b><span>{name}</span><em>{92-i*7}</em></p>
-            ))}
-          </section>
-        </div>
-      </div>
-    </div>
-  )
+function Dashboard({ hero = false }: { hero?: boolean }) {
+  return <div className={`product-dashboard ${hero ? 'product-dashboard-hero' : ''}`}><aside><Image src="/brand/vetro-mark-purple.png" alt="" width={24} height={24}/><span className="active"/><span/><span/><span/><span/></aside><div className="dashboard-body"><div className="dashboard-title"><div><small>VISÃO GERAL</small><strong>Operação comercial</strong></div><span>Este mês <ChevronDown size={12}/></span></div><div className="metric-row">{[['Vendas (Mês)','R$ 48,6M','+12,4%'],['Empreendimentos','42','+8 novos'],['Parceiros ativos','128','+12 este mês'],['VETRO Score','87','Excelente']].map(([label,value,change]) => <div className="product-metric" key={label}><small>{label}</small><b>{value}</b><em>{change}</em></div>)}</div><div className="dashboard-chart"><div><small>Evolução de vendas</small><span>Últimos 7 meses</span></div><svg viewBox="0 0 520 164" preserveAspectRatio="none" aria-label="Evolução positiva de vendas"><path className="chart-grid" d="M0 35H520M0 82H520M0 129H520"/><motion.path initial={{pathLength:0}} whileInView={{pathLength:1}} viewport={{once:true}} transition={{duration:.9}} d="M8 139 L60 116 L106 124 L150 82 L194 104 L244 70 L292 99 L339 48 L389 62 L441 30 L512 15" fill="none" stroke="url(#lineGradient)" strokeWidth="4"/><defs><linearGradient id="lineGradient"><stop stopColor="#6e35ed"/><stop offset="1" stopColor="#bc9aff"/></linearGradient></defs></svg></div><div className="dashboard-bottom"><div><small>Pipeline em andamento</small><b>312 oportunidades</b><div className="pipeline-bars"><i/><i/><i/><i/></div></div><div><small>Atividades importantes</small><p>Reunião com parceiro <em>Hoje, 14:00</em></p><p>Follow-up proposta <em>Amanhã, 10:30</em></p></div></div></div></div>
 }
 
 export default function LandingClient() {
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      entries => entries.forEach(entry => entry.isIntersecting && entry.target.classList.add('is-visible')),
-      { threshold: .12 }
-    )
-    document.querySelectorAll('.landing-reveal').forEach(el => observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
-
-  return (
-    <main className="landing-page">
-      <header className="landing-nav-public">
-        <a href="#top" aria-label="VETRO"><Brand/></a>
-        <nav aria-label="Navegação principal">
-          <a href="#plataforma">Plataforma</a>
-          <a href="#v6">V6 Method</a>
-          <a href="#intelligence">Intelligence</a>
-          <a href="#origem">Por que VETRO</a>
-        </nav>
-        <div className="landing-nav-actions">
-          <Link href="/login" className="landing-login-link">Acessar plataforma</Link>
-          <Cta>Conhecer a VETRO</Cta>
-        </div>
-      </header>
-
-      <section className="landing-hero" id="top">
-        <div className="landing-grid-bg"/>
-        <div className="landing-aurora landing-aurora-one"/>
-        <div className="landing-aurora landing-aurora-two"/>
-        <div className="landing-container landing-hero-grid">
-          <div className="landing-hero-copy landing-reveal is-visible">
-            <span className="landing-kicker"><i/> Inteligência comercial para incorporadoras</span>
-            <h1>A inteligência por trás da <em>operação comercial.</em></h1>
-            <p>Sua operação gera dados todos os dias. A VETRO transforma relacionamento, parceiros, pipeline, empreendimentos e vendas em <strong>visão, gestão e direção comercial.</strong></p>
-            <div className="landing-hero-actions"><Cta>Conhecer a VETRO</Cta><a className="landing-text-link" href="#plataforma">Ver a plataforma ↓</a></div>
-            <div className="landing-proof-line"><span>Multiempresa</span><i/><span>Gestão de parceiros</span><i/><span>V6 Method</span><i/><span>Inteligência aplicada</span></div>
-          </div>
-          <div className="landing-product landing-reveal is-visible">
-            <div className="landing-product-glow"/>
-            <div className="landing-browser"><div className="landing-browser-top"><i/><i/><i/><span>app.vetro</span></div><ProductMock/></div>
-            <div className="landing-floating landing-floating-score"><small>VETRO SCORE</small><strong>78</strong><span>Parceiro forte</span></div>
-            <div className="landing-floating landing-floating-signal"><i/><div><small>VETRO SIGNAL</small><strong>Parceiro em aceleração</strong></div></div>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section landing-problem" id="plataforma"><div className="landing-container">
-        <span className="landing-eyebrow landing-reveal">O problema não é falta de dados</span>
-        <div className="landing-split landing-reveal"><h2>Sua incorporadora tem dados.<br/><em>Você consegue enxergar o que eles estão dizendo?</em></h2><div><p>Informações comerciais costumam ficar espalhadas entre planilhas, gestores, sistemas, imobiliárias e controles paralelos.</p><p>Quando a informação está fragmentada, a gestão também fica.</p></div></div>
-        <div className="landing-data-strip landing-reveal">{['Relacionamento','Visitas','Corretores','Propostas','Vendas','VGV','Pipeline','Empreendimentos'].map(item => <span key={item}>{item}</span>)}</div>
-        <div className="landing-center landing-reveal"><Cta>Quero enxergar melhor minha operação</Cta></div>
-      </div></section>
-
-      <section className="landing-section landing-platform"><div className="landing-container">
-        <div className="landing-section-head landing-reveal"><div><span className="landing-eyebrow">Uma plataforma, uma leitura</span><h2>Não é mais um dashboard.</h2></div><p>A VETRO conecta o que acontece no campo ao que a gestão precisa enxergar para decidir.</p></div>
-        <div className="landing-modules-grid">{modules.map(([title,description],i) => <article className="landing-module landing-reveal" key={title}><span>0{i+1}</span><div className="landing-module-icon"><i/><i/></div><h3>{title}</h3><p>{description}</p></article>)}</div>
-        <div className="landing-center landing-reveal"><Cta>Ver a VETRO na minha operação</Cta></div>
-      </div></section>
-
-      <section className="landing-section landing-v6" id="v6"><div className="landing-orbit"/><div className="landing-container">
-        <div className="landing-v6-intro landing-reveal"><div><span className="landing-eyebrow">Método proprietário VETRO</span><h2>V6 Method</h2></div><blockquote>“Vender é resultado.<br/>Entender <em>por que vende</em> é inteligência.”</blockquote></div>
-        <div className="landing-v6-layout"><div className="landing-pillars">{pillars.map(([code,title,description]) => <article className="landing-pillar landing-reveal" key={code}><span>{code}</span><div><h3>{title}</h3><p>{description}</p></div></article>)}</div><div className="landing-score-panel landing-reveal"><div className="landing-score-rings"><i/><i/><i/><strong>78</strong><small>VETRO SCORE</small></div><b>Parceiro forte</b><p>Uma leitura única sobre força, saúde e desempenho da parceria comercial.</p></div></div>
-        <div className="landing-v6-note landing-reveal"><strong>O parceiro que mais vendeu ontem não é necessariamente o mais estratégico para amanhã.</strong><p>A VETRO cruza relacionamento, ativação, oportunidades, conversão, valor e consistência para mostrar a força real de cada parceria.</p></div>
-        <div className="landing-center landing-reveal"><Cta>Quero analisar meus parceiros com a VETRO</Cta></div>
-      </div></section>
-
-      <section className="landing-section landing-intelligence" id="intelligence"><div className="landing-container landing-intelligence-grid">
-        <div className="landing-reveal"><span className="landing-eyebrow">Inteligência aplicada</span><h2>A VETRO não deveria apenas mostrar o que aconteceu.</h2><h3>Ela deve mostrar <em>onde agir.</em></h3><p>Menos tempo procurando informação. Mais tempo tomando decisão.</p><Cta>Transformar dados em decisão</Cta></div>
-        <div className="landing-signals">{signals.map(([title,description],i) => <article className="landing-signal-row landing-reveal" key={title}><span>{String(i+1).padStart(2,'0')}</span><div><small>VETRO SIGNAL</small><h3>{title}</h3><p>{description}</p></div></article>)}</div>
-      </div></section>
-
-      <section className="landing-section landing-executive"><div className="landing-container">
-        <div className="landing-section-head landing-reveal"><div><span className="landing-eyebrow">Visão executiva</span><h2>Abra a VETRO.<br/>Entenda sua operação.</h2></div><p>VGV, pipeline, conversão, parceiros, empreendimentos, equipe e VETRO Score em uma única visão.</p></div>
-        <div className="landing-dashboard-stage landing-reveal"><ProductMock large/></div>
-        <div className="landing-center landing-reveal"><Cta>Centralizar minha operação comercial</Cta></div>
-      </div></section>
-
-      <section className="landing-section landing-origin" id="origem"><div className="landing-container landing-origin-grid">
-        <div className="landing-reveal"><span className="landing-eyebrow">Nascida da operação real</span><h2>Tecnologia construída a partir do campo.</h2></div>
-        <div className="landing-origin-copy landing-reveal"><p>A VETRO não nasceu de uma hipótese sobre como uma incorporadora deveria trabalhar. Nasceu da rotina de gestores, do relacionamento com imobiliárias, das planilhas, propostas, empreendimentos, vendas e das decisões tomadas todos os dias.</p><strong>A experiência comercial de campo transformada em tecnologia proprietária.</strong></div>
-      </div></section>
-
-      <section className="landing-section landing-audience"><div className="landing-container">
-        <div className="landing-section-head landing-reveal"><div><span className="landing-eyebrow">Para quem é</span><h2>Feita para operações que precisam enxergar mais.</h2></div></div>
-        <div className="landing-audience-grid">{['Incorporadoras','Construtoras com operação comercial estruturada','Diretores comerciais','Heads e gerentes comerciais','Operações com rede de imobiliárias parceiras','Empresas com dados comerciais dispersos'].map((item,i) => <div className="landing-reveal" key={item}><span>0{i+1}</span>{item}</div>)}</div>
-      </div></section>
-
-      <section className="landing-final"><div className="landing-final-glow"/><div className="landing-container landing-reveal"><Brand large/><span className="landing-eyebrow">A inteligência por trás da operação comercial.</span><h2>Sua operação já produz os dados.<br/><em>Está na hora de enxergar a inteligência por trás deles.</em></h2><p>Conheça a VETRO e entenda como a plataforma pode ser aplicada à operação comercial da sua incorporadora.</p><Cta>Quero a VETRO na minha operação</Cta><small>Implantação consultiva. Fale com nosso especialista comercial.</small></div></section>
-
-      <footer className="landing-footer"><div className="landing-container"><div><Brand/><small>A inteligência por trás da operação comercial.</small></div><nav><a href="#plataforma">Plataforma</a><a href="#v6">V6 Method</a><Link href="/login">Acessar</Link></nav><span>© 2026 VETRO. Todos os direitos reservados.</span></div></footer>
-    </main>
-  )
+  const reduceMotion = useReducedMotion(); const transition = reduceMotion ? {duration:0} : {duration:.7, ease:[.2,.7,.2,1] as const}
+  return <main className="vetro-landing">
+    <header className="vetro-header"><a href="#top" aria-label="Início VETRO"><Brand priority/></a><nav aria-label="Navegação principal"><a href="#plataforma">Plataforma</a><a href="#v6">V6 Method</a><a href="#intelligence">Intelligence</a><a href="#origem">Por que VETRO</a></nav><div className="header-actions"><Link href="/login">Acessar plataforma</Link><Cta>Conhecer a VETRO</Cta><button className="menu-button" aria-label="Abrir menu"><Menu size={19}/></button></div></header>
+    <Section id="top" className="hero-section"><div className="technical-grid"/><div className="hero-light"/><div className="landing-width hero-layout"><motion.div initial="hidden" animate="visible" variants={{visible:{transition:{staggerChildren:.11}}}} className="hero-copy"><motion.p variants={reveal} transition={transition} className="eyebrow"><i/>Inteligência comercial para incorporadoras</motion.p><motion.h1 variants={reveal} transition={transition}>A inteligência por trás da <em>operação comercial.</em></motion.h1><motion.div variants={reveal} transition={transition} className="hero-actions"><Cta>Conhecer a VETRO</Cta><Link href="/login" className="quiet-action">Acessar plataforma <ArrowRight size={16}/></Link></motion.div></motion.div><motion.div initial={reduceMotion ? false : {opacity:0,y:36,rotateX:4}} whileInView={{opacity:1,y:0,rotateX:0}} viewport={{once:true}} transition={{...transition,delay:.12}} className="hero-product"><div className="product-beam"/><Dashboard hero/><article className="floating-score"><small>VETRO SCORE</small><strong>87</strong><span>Excelente</span><i/></article><article className="floating-signal"><BellRing size={17}/><div><small>VETRO SIGNAL</small><b>Ativação em alta</b></div></article></motion.div><motion.div initial="hidden" whileInView="visible" viewport={{once:true}} variants={reveal} transition={transition} className="hero-description"><p>A VETRO transforma relacionamento, parceiros, pipeline, empreendimentos e vendas em visão, gestão e direção comercial.</p><div>{['Gestão de parceiros','Pipeline com visibilidade total','Inteligência aplicada','Direção comercial por dados'].map(item => <span key={item}>{item}</span>)}</div></motion.div></div></Section>
+    <Section className="problem-section"><div className="landing-width"><div className="problem-intro"><p className="eyebrow">O problema</p><h2>Sua incorporadora tem dados.<br/><em>Você consegue enxergar o que eles estão dizendo?</em></h2></div><div className="fragment-map">{['Planilhas','Gestores','Imobiliárias','Corretores','Propostas','Sistemas','Empreendimentos','Controles paralelos'].map((item,index) => <motion.span key={item} initial={{opacity:0,x:index%2?38:-38}} whileInView={{opacity:1,x:0}} viewport={{once:true}} transition={{...transition,delay:index*.05}}>{item}</motion.span>)}<div className="unified-reading"><Image src="/brand/vetro-mark-purple.png" alt="" width={38} height={38}/><b>Leitura VETRO</b><small>visão unificada</small></div></div><div className="problem-close"><p>Quando a informação está fragmentada, a gestão também fica.</p><Cta>Quero enxergar melhor minha operação</Cta></div></div></Section>
+    <Section id="plataforma" className="platform-section"><div className="landing-width"><div className="section-heading editorial"><div><p className="eyebrow">A VETRO</p><h2>Não é mais um dashboard.<br/><em>É inteligência comercial aplicada à operação.</em></h2></div><p>A plataforma conecta o que acontece no campo ao que a gestão precisa enxergar.</p></div><div className="module-ribbon">{modules.map(([name,copy,Icon],index) => <motion.article key={name} initial="hidden" whileInView="visible" viewport={{once:true}} variants={reveal} transition={{...transition,delay:index*.07}} className={index===3?'featured':''}><span>0{index+1}</span><Icon size={24}/><h3>{name}</h3><p>{copy}</p><ArrowRight size={17}/></motion.article>)}</div><div className="align-center"><Cta>Ver a VETRO na minha operação</Cta></div></div></Section>
+    <Section id="v6" className="v6-section"><div className="technical-grid dim"/><div className="landing-width"><div className="v6-heading"><div><p className="eyebrow">V6 Method</p><h2>Entenda a força real de cada parceiro comercial.</h2></div><p>Vender é resultado. <em>Entender por que vende é inteligência.</em></p></div><div className="v6-orbit"><motion.div initial={{scale:.86,opacity:0}} whileInView={{scale:1,opacity:1}} viewport={{once:true}} transition={transition} className="score-core"><small>VETRO SCORE</small><strong>87</strong><b>Parceiro estratégico</b><i/></motion.div>{pillars.map(([code,title,text],index) => <motion.article initial={{opacity:0,scale:.94}} whileInView={{opacity:1,scale:1}} viewport={{once:true}} transition={{...transition,delay:index*.08}} key={code}><span>{code}</span><h3>{title}</h3><p>{text}</p></motion.article>)}</div><div className="v6-mobile-list"><div className="score-core"><small>VETRO SCORE</small><strong>87</strong><b>Parceiro estratégico</b></div>{pillars.map(([code,title,text]) => <article key={code}><span>{code}</span><div><h3>{title}</h3><p>{text}</p></div></article>)}</div><div className="align-center"><Cta>Quero analisar meus parceiros com a VETRO</Cta></div></div></Section>
+    <Section id="intelligence" className="intelligence-section"><div className="landing-width intelligence-layout"><div className="intelligence-copy"><p className="eyebrow">VETRO Intelligence</p><h2>A VETRO não deve apenas mostrar o que aconteceu.</h2><h3>Ela deve mostrar <em>onde agir.</em></h3><p>Menos tempo procurando informação. Mais tempo tomando decisão.</p><Cta>Transformar dados em decisão</Cta></div><div className="signal-console">{signals.map(([title,text,time],index) => <motion.article initial="hidden" whileInView="visible" viewport={{once:true}} variants={reveal} transition={{...transition,delay:index*.07}} key={title}><div className="signal-dot"><i/></div><div><small>VETRO SIGNAL <em>{time}</em></small><h3>{title}</h3><p>{text}</p><div className="microtrend"><i/><i/><i/><i/><i/><i/></div></div></motion.article>)}</div></div></Section>
+    <Section className="executive-section"><div className="landing-width"><div className="section-heading"><div><p className="eyebrow">Visão executiva</p><h2>Abra a VETRO.<br/>Entenda sua operação.</h2></div><p>VGV, vendas, parceiros, pipeline, conversão, empreendimentos, equipe, score e alertas em uma única visão.</p></div><motion.div initial={{opacity:0,y:32}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={transition} className="executive-product"><Dashboard/></motion.div><div className="align-center"><Cta>Centralizar minha operação comercial</Cta></div></div></Section>
+    <Section className="mobile-section"><div className="mobile-light"/><div className="landing-width mobile-layout"><div><p className="eyebrow">Experiência mobile</p><h2>Clareza comercial em qualquer lugar.</h2><p>Acompanhe os principais sinais da sua operação e tome decisões com informação sempre à mão.</p></div><motion.div initial={reduceMotion?false:{opacity:0,rotate:9,y:28}} whileInView={{opacity:1,rotate:0,y:0}} viewport={{once:true}} transition={transition} className="phone"><div className="phone-top"><Brand/><Menu size={16}/></div><h3>Olá, time.</h3><small>Aqui está o resumo da sua operação.</small><div className="phone-metrics"><b>R$ 48,6M <small>Vendas</small></b><b>128 <small>Parceiros</small></b><b>87 <small>Score</small></b></div><div className="phone-chart"><small>Evolução de vendas</small><svg viewBox="0 0 260 80"><path d="M5 67L34 56 60 62 88 41 112 52 142 35 167 44 193 20 225 30 255 9" fill="none" stroke="#a986ff" strokeWidth="3"/></svg></div><div className="phone-activity"><small>Atividades importantes</small><p>Reunião com parceiro <em>Hoje, 14:00</em></p><p>Follow-up proposta <em>Amanhã</em></p></div></motion.div></div></Section>
+    <Section id="origem" className="origin-section"><div className="origin-object"/><div className="landing-width origin-layout"><div><p className="eyebrow">Nascida da operação real</p><h2>Tecnologia construída a partir da operação real.</h2></div><div><p>A VETRO não nasceu de uma hipótese sobre como uma incorporadora deveria trabalhar.</p><p>Nasceu da rotina comercial, do relacionamento com imobiliárias, da leitura das carteiras, dos empreendimentos, das propostas, das vendas e das decisões que precisam ser tomadas todos os dias.</p><strong>A experiência comercial de campo transformada em tecnologia proprietária.</strong></div></div></Section>
+    <Section className="audience-section"><div className="landing-width"><p className="eyebrow">Para quem é</p><h2>Feita para operações que precisam enxergar mais.</h2><div>{['Incorporadoras','Construtoras com operação comercial estruturada','Diretores comerciais','Heads e gerentes','Operações com rede de imobiliárias','Empresas com dados comerciais dispersos'].map((item,index) => <motion.article initial="hidden" whileInView="visible" viewport={{once:true}} variants={reveal} transition={{...transition,delay:index*.06}} key={item}><span>0{index+1}</span><p>{item}</p></motion.article>)}</div></div></Section>
+    <section className="final-section"><div className="final-portal"/><div className="technical-grid"/><div className="landing-width"><Brand/><p className="eyebrow">A inteligência por trás da operação comercial</p><h2>Sua operação já produz os dados.<br/><em>Está na hora de enxergar a inteligência por trás deles.</em></h2><p>Conheça a VETRO e entenda como a plataforma pode ser aplicada à operação comercial da sua incorporadora.</p><Cta>Quero a VETRO na minha operação</Cta><small>Implantação consultiva. Fale com nosso especialista comercial.</small></div></section>
+    <footer><div className="landing-width"><div><Brand/><small>A inteligência por trás da operação comercial.</small></div><nav><a href="#plataforma">Plataforma</a><a href="#v6">V6 Method</a><a href="#intelligence">Intelligence</a><a href="#origem">Por que VETRO</a><Link href="/login">Acessar plataforma</Link></nav><small>© 2026 VETRO. Todos os direitos reservados.</small></div></footer>
+  </main>
 }
