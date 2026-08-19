@@ -18,13 +18,22 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient()
-      const { error: signInError } = await Promise.race([
+      const { data, error: signInError } = await Promise.race([
         supabase.auth.signInWithPassword({ email, password }),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Login timeout')), 15_000)),
       ])
 
       if (signInError) {
-        setError('Não foi possível entrar. Verifique e-mail e senha.')
+        setError(
+          signInError.message.toLowerCase().includes('email not confirmed')
+            ? 'Confirme o e-mail da sua conta antes de entrar.'
+            : 'Não foi possível entrar. Verifique e-mail e senha.'
+        )
+        return
+      }
+
+      if (!data.session || !data.user) {
+        setError('O login foi aceito, mas a sessão não foi criada. Tente novamente.')
         return
       }
 
