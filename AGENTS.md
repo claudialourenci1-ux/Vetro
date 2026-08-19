@@ -28,11 +28,70 @@ VETRO is a B2B SaaS for commercial intelligence and sales management for real-es
 7. Importar dados
 8. Admin
 
-## Roles
-- super_admin: VETRO platform administration
-- admin: company administration
-- manager: commercial management
-- collaborator: operational usage
+## Access model
+VETRO is invitation-only. There is no public signup flow.
+
+### super_admin
+- VETRO platform owner/operator.
+- Can create/activate client companies.
+- Can create or authorize the first company admin.
+- Can access all companies and platform-level administration.
+
+### admin
+- Company administrator approved after the SaaS is contracted.
+- Can manage the company workspace, settings, team and permissions.
+- Can invite `manager` and `collaborator` users through the approved backend flow.
+- Cannot access another company or platform-wide VETRO administration.
+
+### manager
+- Commercial management role.
+- Can access operational and strategic company data needed to manage the commercial operation.
+- Cannot manage company administrators or platform ownership.
+
+### collaborator
+- Operational data-entry role.
+- Must not receive strategic access by default.
+- Default permissions are limited to:
+  - `partners_view`
+  - `pipeline_view`
+  - `opportunities_manage`
+  - `activities_log`
+  - `developments_view`
+- Does NOT receive by default:
+  - Overview KPIs
+  - Intelligence / V6
+  - sales/VGV analytics
+  - team visibility
+  - user management
+  - imports
+  - admin/settings
+- Company admins may explicitly grant additional collaborator permissions.
+
+## Granular permissions
+Backend permission enum: `company_permission`.
+Available permissions:
+- `overview_view`
+- `partners_view`
+- `partners_manage`
+- `pipeline_view`
+- `opportunities_manage`
+- `activities_log`
+- `developments_view`
+- `imports_execute`
+- `intelligence_view`
+- `team_view`
+- `team_manage`
+- `admin_view`
+- `settings_manage`
+
+Permission records live in `company_member_permissions`.
+Use the backend as the source of truth. Hiding a menu is not authorization.
+
+RPCs:
+- `get_my_company_permissions(target_company_id)` returns the current user's effective permissions.
+- `set_member_permissions(target_company_id, target_user_id, permission_list)` is restricted to company admins and only targets active collaborators.
+
+The RLS layer already enforces permission gates on strategic data and write operations. Do not weaken or duplicate this logic in frontend code.
 
 ## V6 Method
 - V1 Relacionamento: 15%
@@ -45,9 +104,9 @@ VETRO is a B2B SaaS for commercial intelligence and sales management for real-es
 Do not invent or hardcode formulas for individual dimensions unless they already exist in the backend configuration. The weighted overall score is calculated by the database.
 
 ## Existing backend entities
-`profiles`, `companies`, `company_memberships`, `company_settings`, `partners`, `partner_aliases`, `partner_units`, `brokers`, `broker_partner_memberships`, `developments`, `pipeline_stages`, `opportunities`, `activities`, `sales`, `imports`, `import_rows`, `v6_dimension_configs`, `v6_scores`, `partner_metrics_daily`, `audit_events`.
+`profiles`, `companies`, `company_memberships`, `company_member_permissions`, `company_settings`, `partners`, `partner_aliases`, `partner_units`, `brokers`, `broker_partner_memberships`, `developments`, `pipeline_stages`, `opportunities`, `activities`, `sales`, `imports`, `import_rows`, `v6_dimension_configs`, `v6_scores`, `partner_metrics_daily`, `audit_events`.
 
-Views / RPCs include `partner_performance`, `pipeline_overview`, and `get_overview_metrics`.
+Views / RPCs include `partner_performance`, `pipeline_overview`, `get_overview_metrics`, `get_my_company_permissions`, and `set_member_permissions`.
 
 Edge Functions include `bootstrap-admin` and `invite-member`.
 
@@ -63,6 +122,9 @@ Premium B2B technology product. Clean, dense enough for operations, highly legib
 - Fix root causes, not visual symptoms.
 - Do not replace working backend architecture with mock data.
 - For screens without data, build useful empty states instead of fake production metrics.
+- Do not add public signup or self-service account creation.
+- Menus, routes and actions must reflect effective backend permissions.
+- Never rely on frontend visibility as the security boundary.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
