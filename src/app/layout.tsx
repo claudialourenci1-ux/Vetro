@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import './landing.css'
 
 export const metadata: Metadata = {
-  title: 'VETRO',
+  title: 'VETRO | Inteligência comercial para incorporadoras',
   description: 'A inteligência por trás da operação comercial.',
 }
 
