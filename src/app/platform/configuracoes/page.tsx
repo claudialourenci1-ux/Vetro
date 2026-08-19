@@ -1,14 +1,9 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/auth/server'
 import { PageHeading } from '@/app/_components/app-shell'
 import { PlatformShell } from '@/app/_components/platform-shell'
 
 export default async function PlatformSettingsPage() {
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  const userId = claims?.claims?.sub
-  const { data: profile } = userId ? await supabase.from('profiles').select('global_role').eq('id', userId).maybeSingle() : { data: null }
-  if (profile?.global_role !== 'super_admin') redirect('/')
+  await requireSuperAdmin()
 
   return <PlatformShell>
     <PageHeading eyebrow="Plataforma" title="Configurações" />

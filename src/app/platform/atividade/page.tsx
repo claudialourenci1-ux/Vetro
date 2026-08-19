@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/auth/server'
 import { PageHeading } from '@/app/_components/app-shell'
 import { PlatformShell } from '@/app/_components/platform-shell'
 
@@ -15,11 +14,7 @@ type EventRow = {
 const dateTime = (value?: string | null) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'Sem data'
 
 export default async function PlatformActivityPage() {
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  const userId = claims?.claims?.sub
-  const { data: profile } = userId ? await supabase.from('profiles').select('global_role').eq('id', userId).maybeSingle() : { data: null }
-  if (profile?.global_role !== 'super_admin') redirect('/')
+  const { supabase } = await requireSuperAdmin()
 
   const { data } = await supabase.rpc('get_platform_recent_activity', { limit_rows: 50 })
   const events = (data ?? []) as EventRow[]

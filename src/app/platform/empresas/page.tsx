@@ -1,6 +1,5 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/auth/server'
 import { PageHeading } from '@/app/_components/app-shell'
 import { PlatformShell } from '@/app/_components/platform-shell'
 import { PlatformCompanyManager } from '@/app/_components/platform-company-manager'
@@ -27,11 +26,7 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL',
 const dateTime = (value?: string | null) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) : 'Sem atividade'
 
 export default async function PlatformCompaniesPage() {
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  const userId = claims?.claims?.sub
-  const { data: profile } = userId ? await supabase.from('profiles').select('global_role').eq('id', userId).maybeSingle() : { data: null }
-  if (profile?.global_role !== 'super_admin') redirect('/')
+  const { supabase } = await requireSuperAdmin()
 
   const { data } = await supabase.from('platform_companies_overview').select('*').order('created_at', { ascending: false })
   const companies = (data ?? []) as CompanyRow[]

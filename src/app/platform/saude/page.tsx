@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/auth/server'
 import { PageHeading } from '@/app/_components/app-shell'
 import { PlatformShell } from '@/app/_components/platform-shell'
 
@@ -7,11 +6,7 @@ type DataRecord = Record<string, unknown>
 const number = (value: unknown) => new Intl.NumberFormat('pt-BR').format(Number(value ?? 0))
 
 export default async function PlatformHealthPage() {
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  const userId = claims?.claims?.sub
-  const { data: profile } = userId ? await supabase.from('profiles').select('global_role').eq('id', userId).maybeSingle() : { data: null }
-  if (profile?.global_role !== 'super_admin') redirect('/')
+  const { supabase } = await requireSuperAdmin()
 
   const [{ data: metrics }, { data: recentImports }, { data: recentAudit }] = await Promise.all([
     supabase.rpc('get_platform_overview_metrics'),
@@ -41,7 +36,7 @@ export default async function PlatformHealthPage() {
       <div className="panel-heading"><div><p className="eyebrow">Importações</p><h2>Execuções recentes</h2></div><span>{recentImports?.length ?? 0} registros</span></div>
       {recentImports?.length ? <div className="activity-list">{recentImports.map((item) => {
         const companyRelation = item.companies
-        const companyName = Array.isArray(companyRelation) ? companyRelation[0]?.name : undefined
+        const companyName = companyRelation?.name
         return <div className="activity-row platform-activity-full" key={item.id}><span className={`activity-dot ${Number(item.error_rows ?? 0) > 0 ? 'warning' : ''}`} /><div><b>{companyName ?? 'Empresa'}</b><span>{item.status} · {Number(item.error_rows ?? 0)} erros</span></div><time>{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.created_at))}</time></div>
       })}</div> : <p className="panel-empty">Nenhuma importação foi executada ainda.</p>}
     </section>

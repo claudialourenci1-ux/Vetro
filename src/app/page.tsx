@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile, requireAuthenticatedUser } from '@/lib/auth/server'
 import { AppShell, PageHeading } from './_components/app-shell'
 import { PlatformShell } from './_components/platform-shell'
 import { OnboardingCard } from './_components/onboarding-card'
@@ -11,13 +11,9 @@ const value = (row: DataRecord | null, keys: string[]) => keys.map((key) => row?
 const dateTime = (value: unknown) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(String(value))) : 'Sem atividade'
 
 export default async function HomePage() {
-  const supabase = await createClient()
-  const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims?.sub
-
-  const { data: profile } = userId
-    ? await supabase.from('profiles').select('global_role').eq('id', userId).maybeSingle()
-    : { data: null }
+  const { supabase, user } = await requireAuthenticatedUser()
+  const userId = user.id
+  const profile = await getCurrentProfile(userId)
 
   if (profile?.global_role === 'super_admin') {
     const [metricsResult, companiesResult, activityResult] = await Promise.all([
@@ -100,7 +96,7 @@ export default async function HomePage() {
   const membership = memberships?.[0]
   const companyId = membership?.company_id
   const companyRelation = membership?.companies
-  const companyName = companyRelation?.[0]?.name
+  const companyName = companyRelation?.name
 
   const [metricsResult, rankingResult, pipelineResult] = companyId ? await Promise.all([
     supabase.rpc('get_overview_metrics', { target_company_id: companyId }),

@@ -17,7 +17,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const platformItems = [
-  { href: '/', label: 'Visão geral', icon: Gauge },
+  { href: '/platform', label: 'Visão geral', icon: Gauge },
   { href: '/platform/empresas', label: 'Empresas', icon: Building2 },
   { href: '/platform/usuarios', label: 'Usuários', icon: UsersRound },
   { href: '/platform/atividade', label: 'Atividade', icon: Activity },
@@ -42,7 +42,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
     <div className={`app-shell ${collapsed ? 'is-collapsed' : ''}`}>
       <aside className="sidebar platform-sidebar">
         <div className="sidebar-head">
-          <Link className="brand" href="/" aria-label="VETRO Control Center">
+          <Link className="brand" href="/platform" aria-label="VETRO Control Center">
             <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
             <strong>VETRO</strong>
           </Link>
@@ -58,7 +58,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
 
         <nav className="nav" aria-label="Administração da plataforma">
           {platformItems.map(({ href, label, icon: Icon }) => {
-            const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+            const active = href === '/platform' ? pathname === '/platform' : pathname.startsWith(href)
             return <Link className={`nav-link ${active ? 'active' : ''}`} href={href} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>
           })}
         </nav>

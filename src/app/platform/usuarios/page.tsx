@@ -1,10 +1,9 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/auth/server'
 import { PageHeading } from '@/app/_components/app-shell'
 import { PlatformShell } from '@/app/_components/platform-shell'
 
 type ProfileRow = { id: string; full_name: string | null; global_role: string | null; created_at: string | null }
-type MembershipRow = { user_id: string; company_id: string; role: string | null; is_active: boolean | null; updated_at: string | null; companies: { name?: string | null }[] | null }
+type MembershipRow = { user_id: string; company_id: string; role: string | null; is_active: boolean | null; updated_at: string | null; companies: { name?: string | null } | null }
 type UserRow = {
   user_id: string
   full_name: string | null
@@ -21,11 +20,7 @@ const dateTime = (value?: string | null) => value ? new Intl.DateTimeFormat('pt-
 const roleLabel = (role?: string | null) => ({ super_admin: 'Super Admin', admin: 'Admin', manager: 'Gestor', collaborator: 'Colaborador' }[role ?? ''] ?? 'Sem função')
 
 export default async function PlatformUsersPage() {
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  const userId = claims?.claims?.sub
-  const { data: profile } = userId ? await supabase.from('profiles').select('global_role').eq('id', userId).maybeSingle() : { data: null }
-  if (profile?.global_role !== 'super_admin') redirect('/')
+  const { supabase } = await requireSuperAdmin()
 
   const [{ data: profilesData }, { data: membershipsData }] = await Promise.all([
     supabase.from('profiles').select('id,full_name,global_role,created_at').order('created_at', { ascending: false }),
@@ -47,7 +42,7 @@ export default async function PlatformUsersPage() {
       full_name: userProfile.full_name,
       global_role: userProfile.global_role,
       company_id: membership.company_id,
-      company_name: membership.companies?.[0]?.name ?? null,
+      company_name: membership.companies?.name ?? null,
       company_role: membership.role,
       membership_active: membership.is_active,
       user_created_at: userProfile.created_at,

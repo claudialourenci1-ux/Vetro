@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/auth/server'
 import { PageHeading } from '@/app/_components/app-shell'
 import { PlatformShell } from '@/app/_components/platform-shell'
 import { PlatformInviteUser } from '@/app/_components/platform-invite-user'
@@ -11,7 +11,7 @@ type MembershipRow = {
   role: string | null
   is_active: boolean | null
   updated_at: string | null
-  profiles: { full_name?: string | null }[] | null
+  profiles: { full_name?: string | null } | null
 }
 
 type UserRow = {
@@ -29,11 +29,7 @@ const dateTime = (value?: string | null) => value ? new Intl.DateTimeFormat('pt-
 
 export default async function PlatformCompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: claims } = await supabase.auth.getClaims()
-  const userId = claims?.claims?.sub
-  const { data: profile } = userId ? await supabase.from('profiles').select('global_role').eq('id', userId).maybeSingle() : { data: null }
-  if (profile?.global_role !== 'super_admin') redirect('/')
+  const { supabase } = await requireSuperAdmin()
 
   const [{ data: companyData }, { data: membershipsData }] = await Promise.all([
     supabase.from('platform_companies_overview').select('*').eq('id', id).maybeSingle(),
@@ -44,7 +40,7 @@ export default async function PlatformCompanyPage({ params }: { params: Promise<
   const company = companyData as CompanyRow
   const users: UserRow[] = ((membershipsData ?? []) as MembershipRow[]).map((membership) => ({
     user_id: membership.user_id,
-    full_name: membership.profiles?.[0]?.full_name ?? null,
+    full_name: membership.profiles?.full_name ?? null,
     company_role: membership.role,
     membership_active: membership.is_active,
     updated_at: membership.updated_at,
