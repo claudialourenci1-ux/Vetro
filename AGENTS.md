@@ -18,7 +18,24 @@ VETRO is a B2B SaaS for commercial intelligence and sales management for real-es
 - `@supabase/ssr` for browser/server clients and auth proxy
 - Vercel deployment target
 
-## Product modules
+## Two product contexts
+VETRO has two distinct authenticated experiences and they must never be conflated.
+
+### 1. VETRO Platform Control Center
+For `super_admin` only. The root `/` must render platform-wide administration rather than an empty company workspace.
+Platform navigation:
+- Visão geral
+- Empresas
+- Usuários
+- Atividade
+- Saúde da plataforma
+- Configurações
+
+The Control Center must show real global metrics, company activity and access structure. A super admin can activate a company, invite its first admin, inspect company access, and view platform-wide activity.
+
+### 2. Company workspace
+For company `admin`, `manager`, and `collaborator` users.
+Workspace navigation:
 1. Overview
 2. Parceiros
 3. Pipeline
@@ -27,6 +44,8 @@ VETRO is a B2B SaaS for commercial intelligence and sales management for real-es
 6. Equipe
 7. Importar dados
 8. Admin
+
+Never show company first-access onboarding to a `super_admin` as the primary platform experience.
 
 ## Access model
 VETRO is invitation-only. There is no public signup flow.
@@ -90,6 +109,11 @@ Use the backend as the source of truth. Hiding a menu is not authorization.
 RPCs:
 - `get_my_company_permissions(target_company_id)` returns the current user's effective permissions.
 - `set_member_permissions(target_company_id, target_user_id, permission_list)` is restricted to company admins and only targets active collaborators.
+- `get_platform_overview_metrics()` is for the super-admin Control Center.
+- `get_platform_recent_activity(limit_rows)` is for the super-admin audit/activity experience.
+
+Platform view:
+- `platform_companies_overview` provides company-level operational rollups to super admins under RLS.
 
 The RLS layer already enforces permission gates on strategic data and write operations. Do not weaken or duplicate this logic in frontend code.
 
@@ -106,7 +130,7 @@ Do not invent or hardcode formulas for individual dimensions unless they already
 ## Existing backend entities
 `profiles`, `companies`, `company_memberships`, `company_member_permissions`, `company_settings`, `partners`, `partner_aliases`, `partner_units`, `brokers`, `broker_partner_memberships`, `developments`, `pipeline_stages`, `opportunities`, `activities`, `sales`, `imports`, `import_rows`, `v6_dimension_configs`, `v6_scores`, `partner_metrics_daily`, `audit_events`.
 
-Views / RPCs include `partner_performance`, `pipeline_overview`, `get_overview_metrics`, `get_my_company_permissions`, and `set_member_permissions`.
+Views / RPCs include `partner_performance`, `pipeline_overview`, `get_overview_metrics`, `get_my_company_permissions`, `set_member_permissions`, `platform_companies_overview`, `get_platform_overview_metrics`, and `get_platform_recent_activity`.
 
 Edge Functions include `bootstrap-admin` and `invite-member`.
 
