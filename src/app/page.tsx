@@ -23,9 +23,8 @@ export default async function HomePage() {
 
   const membership = memberships?.[0]
   const companyId = membership?.company_id
-  const companyName = Array.isArray(membership?.companies)
-    ? membership.companies[0]?.name
-    : (membership?.companies as unknown as { name?: string } | null)?.name
+  const companyRelation = membership?.companies
+  const companyName = companyRelation?.[0]?.name
 
   const [metricsResult, rankingResult, pipelineResult] = companyId ? await Promise.all([
     supabase.rpc('get_overview_metrics', { target_company_id: companyId }),
