@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -62,6 +63,7 @@ export default function LoginPage() {
             <label htmlFor="email">E-mail</label>
             <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
+          <Link href="/forgot-password">Esqueci minha senha</Link>
           <div className="field">
             <label htmlFor="password">Senha</label>
             <input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
