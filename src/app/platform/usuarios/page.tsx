@@ -37,10 +37,12 @@ export default async function PlatformUsersPage() {
   const membershipsByUser = new Map<string, MembershipRow[]>()
   memberships.forEach((membership) => membershipsByUser.set(membership.user_id, [...(membershipsByUser.get(membership.user_id) ?? []), membership]))
 
-  const users: UserRow[] = profiles.flatMap((userProfile) => {
+  const users: UserRow[] = profiles.flatMap<UserRow>((userProfile): UserRow[] => {
     const userMemberships = membershipsByUser.get(userProfile.id) ?? []
-    if (!userMemberships.length) return [{ user_id: userProfile.id, full_name: userProfile.full_name, global_role: userProfile.global_role, company_id: null, company_name: null, company_role: null, membership_active: null, user_created_at: userProfile.created_at, membership_updated_at: null }]
-    return userMemberships.map((membership) => ({
+    if (!userMemberships.length) {
+      return [{ user_id: userProfile.id, full_name: userProfile.full_name, global_role: userProfile.global_role, company_id: null, company_name: null, company_role: null, membership_active: null, user_created_at: userProfile.created_at, membership_updated_at: null }]
+    }
+    return userMemberships.map<UserRow>((membership) => ({
       user_id: userProfile.id,
       full_name: userProfile.full_name,
       global_role: userProfile.global_role,
