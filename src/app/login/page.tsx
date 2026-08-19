@@ -16,17 +16,25 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      const supabase = createClient()
+      const { error: signInError } = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Login timeout')), 15_000)),
+      ])
 
-    if (error) {
-      setError('Não foi possível entrar. Verifique e-mail e senha.')
+      if (signInError) {
+        setError('Não foi possível entrar. Verifique e-mail e senha.')
+        return
+      }
+
+      router.replace('/')
+      router.refresh()
+    } catch {
+      setError('Não foi possível concluir o login. Tente novamente em alguns instantes.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    router.replace('/')
-    router.refresh()
   }
 
   return (
