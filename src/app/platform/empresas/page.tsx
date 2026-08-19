@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeading } from '@/app/_components/app-shell'
@@ -46,11 +47,11 @@ export default async function PlatformCompaniesPage() {
     {companies.length ? <section className="platform-company-table">
       <div className="platform-table-head"><span>Empresa</span><span>Acessos</span><span>Operação</span><span>VGV</span><span>Última atividade</span></div>
       {companies.map((company) => <article className="platform-table-row" key={company.id}>
-        <div className="platform-company-identity"><span className={`company-status-dot ${company.contract_status === 'active' ? 'active' : ''}`} /><div><b>{company.name ?? 'Empresa'}</b><small>{company.plan_name || company.contract_status || 'Sem plano definido'}</small></div></div>
+        <div className="platform-company-identity"><span className={`company-status-dot ${company.contract_status === 'active' ? 'active' : ''}`} /><div><Link className="company-link" href={`/platform/empresas/${company.id}`}><b>{company.name ?? 'Empresa'}</b></Link><small>{company.plan_name || company.contract_status || 'Sem plano definido'}</small></div></div>
         <div><b>{company.users_count ?? 0}</b><small>{company.admins_count ?? 0} admin · {company.managers_count ?? 0} gestores · {company.collaborators_count ?? 0} colab.</small></div>
         <div><b>{company.developments_count ?? 0} empreend.</b><small>{company.partners_count ?? 0} parceiros · {company.opportunities_count ?? 0} oportunidades</small></div>
         <div><b>{brl.format(Number(company.gross_sales_value ?? 0))}</b><small>acompanhado</small></div>
-        <div><b>{dateTime(company.last_activity_at)}</b><small>{company.contract_status ?? 'active'}</small></div>
+        <div><b>{dateTime(company.last_activity_at)}</b><small><Link className="company-link" href={`/platform/empresas/${company.id}`}>Gerenciar acessos →</Link></small></div>
       </article>)}
     </section> : <section className="platform-empty-large"><p className="eyebrow">Primeiro cliente</p><h2>Comece ativando uma incorporadora.</h2><p>O workspace, pipeline padrão e V6 serão preparados automaticamente. Em seguida, o primeiro Admin recebe o convite.</p><PlatformCompanyManager /></section>}
   </PlatformShell>
