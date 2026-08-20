@@ -13,6 +13,14 @@ type CompanyRelation = {
   slug: string
 }
 
+type WorkspaceContextRow = {
+  company_id: string
+  company_name: string
+  company_slug: string
+  membership_role: CompanyRole
+  membership_active: boolean
+}
+
 export type CompanyWorkspace = {
   company: CompanyRelation
   membership: {
@@ -22,26 +30,20 @@ export type CompanyWorkspace = {
   permissions: CompanyPermission[]
 }
 
-function normalizeCompanyRelation(value: CompanyRelation | CompanyRelation[] | null): CompanyRelation | null {
-  if (Array.isArray(value)) return value[0] ?? null
-  return value
-}
+export async function getCompanyWorkspace(): Promise<CompanyWorkspace | null> {
+  const { supabase } = await requireAuthenticatedUser()
 
-export async function requireCompanyWorkspace(): Promise<CompanyWorkspace> {
-  const { supabase, user } = await requireAuthenticatedUser()
-  const { data: membership, error } = await supabase
-    .from('company_memberships')
-    .select('company_id, role, companies(id, name, slug)')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
+  const rpc = supabase.rpc as unknown as (
+    fn: 'get_my_workspace_context',
+  ) => Promise<{ data: WorkspaceContextRow[] | null; error: { message: string } | null }>
 
-  const company = normalizeCompanyRelation(membership?.companies ?? null)
-  if (error || !membership || !company) redirect('/access-restricted')
+  const { data: contextRows, error } = await rpc('get_my_workspace_context')
+  const context = contextRows?.[0]
+
+  if (error || !context || !context.membership_active) return null
 
   const { data: permissionRows } = await supabase.rpc('get_my_company_permissions', {
-    target_company_id: membership.company_id,
+    target_company_id: context.company_id,
   })
 
   const permissions = (permissionRows ?? [])
@@ -49,13 +51,23 @@ export async function requireCompanyWorkspace(): Promise<CompanyWorkspace> {
     .map((row) => row.permission)
 
   return {
-    company,
+    company: {
+      id: context.company_id,
+      name: context.company_name,
+      slug: context.company_slug,
+    },
     membership: {
-      company_id: membership.company_id,
-      role: membership.role,
+      company_id: context.company_id,
+      role: context.membership_role,
     },
     permissions,
   }
+}
+
+export async function requireCompanyWorkspace(): Promise<CompanyWorkspace> {
+  const workspace = await getCompanyWorkspace()
+  if (!workspace) redirect('/access-restricted')
+  return workspace
 }
 
 export function hasCompanyPermission(
