@@ -18,41 +18,71 @@ export type Database = {
         Row: {
           activity_type: string
           broker_id: string | null
+          budget_amount: number | null
+          client_name: string | null
           company_id: string
           created_at: string
+          development_id: string | null
+          farol: string | null
           happened_at: string
           id: string
           metadata: Json
+          motivation: string | null
           notes: string | null
           opportunity_id: string | null
           partner_id: string | null
+          portfolio_id: string | null
+          quantity: number
+          secondary_development_id: string | null
           user_id: string | null
+          visit_qualified: boolean | null
+          visit_summary: string | null
         }
         Insert: {
           activity_type: string
           broker_id?: string | null
+          budget_amount?: number | null
+          client_name?: string | null
           company_id: string
           created_at?: string
+          development_id?: string | null
+          farol?: string | null
           happened_at?: string
           id?: string
           metadata?: Json
+          motivation?: string | null
           notes?: string | null
           opportunity_id?: string | null
           partner_id?: string | null
+          portfolio_id?: string | null
+          quantity?: number
+          secondary_development_id?: string | null
           user_id?: string | null
+          visit_qualified?: boolean | null
+          visit_summary?: string | null
         }
         Update: {
           activity_type?: string
           broker_id?: string | null
+          budget_amount?: number | null
+          client_name?: string | null
           company_id?: string
           created_at?: string
+          development_id?: string | null
+          farol?: string | null
           happened_at?: string
           id?: string
           metadata?: Json
+          motivation?: string | null
           notes?: string | null
           opportunity_id?: string | null
           partner_id?: string | null
+          portfolio_id?: string | null
+          quantity?: number
+          secondary_development_id?: string | null
           user_id?: string | null
+          visit_qualified?: boolean | null
+          visit_summary?: string | null
         }
         Relationships: [
           {
@@ -77,6 +107,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "activities_development_id_fkey"
+            columns: ["development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "activities_opportunity_id_fkey"
             columns: ["opportunity_id"]
             isOneToOne: false
@@ -98,10 +135,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "activities_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_secondary_development_id_fkey"
+            columns: ["secondary_development_id"]
+            isOneToOne: false
+            referencedRelation: "developments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "activities_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_brokers: {
+        Row: {
+          activity_id: string
+          broker_id: string
+          company_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          source_label: string | null
+        }
+        Insert: {
+          activity_id: string
+          broker_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          source_label?: string | null
+        }
+        Update: {
+          activity_id?: string
+          broker_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          source_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_brokers_activity_company_fkey"
+            columns: ["activity_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id", "company_id"]
+          },
+          {
+            foreignKeyName: "activity_brokers_broker_company_fkey"
+            columns: ["broker_id", "company_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id", "company_id"]
+          },
+          {
+            foreignKeyName: "activity_brokers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_brokers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "platform_companies_overview"
             referencedColumns: ["id"]
           },
         ]
@@ -293,6 +403,67 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "platform_companies_overview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_goals: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          indicator_key: string
+          indicator_name: string
+          metadata: Json
+          period_start: string
+          portfolio_id: string | null
+          target_value: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          indicator_key: string
+          indicator_name: string
+          metadata?: Json
+          period_start: string
+          portfolio_id?: string | null
+          target_value?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          indicator_key?: string
+          indicator_name?: string
+          metadata?: Json
+          period_start?: string
+          portfolio_id?: string | null
+          target_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_goals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_goals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "platform_companies_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_goals_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
             referencedColumns: ["id"]
           },
         ]
@@ -699,17 +870,26 @@ export type Database = {
           contact_email: string | null
           contact_name: string | null
           contact_phone: string | null
+          contract_value: number | null
           created_at: string
+          deal_type: string | null
           development_id: string | null
           estimated_value: number | null
+          farol: string | null
           id: string
           lost_reason: string | null
           metadata: Json
+          motivation: string | null
           partner_id: string | null
           partner_unit_id: string | null
+          portfolio_id: string | null
+          proposal_value: number | null
           source: string | null
+          source_date: string | null
           stage: string
           stage_id: string | null
+          table_value: number | null
+          unit_code: string | null
           updated_at: string
         }
         Insert: {
@@ -720,17 +900,26 @@ export type Database = {
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
+          contract_value?: number | null
           created_at?: string
+          deal_type?: string | null
           development_id?: string | null
           estimated_value?: number | null
+          farol?: string | null
           id?: string
           lost_reason?: string | null
           metadata?: Json
+          motivation?: string | null
           partner_id?: string | null
           partner_unit_id?: string | null
+          portfolio_id?: string | null
+          proposal_value?: number | null
           source?: string | null
+          source_date?: string | null
           stage?: string
           stage_id?: string | null
+          table_value?: number | null
+          unit_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -741,17 +930,26 @@ export type Database = {
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
+          contract_value?: number | null
           created_at?: string
+          deal_type?: string | null
           development_id?: string | null
           estimated_value?: number | null
+          farol?: string | null
           id?: string
           lost_reason?: string | null
           metadata?: Json
+          motivation?: string | null
           partner_id?: string | null
           partner_unit_id?: string | null
+          portfolio_id?: string | null
+          proposal_value?: number | null
           source?: string | null
+          source_date?: string | null
           stage?: string
           stage_id?: string | null
+          table_value?: number | null
+          unit_code?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -809,6 +1007,13 @@ export type Database = {
             columns: ["partner_unit_id"]
             isOneToOne: false
             referencedRelation: "partner_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
             referencedColumns: ["id"]
           },
           {
@@ -944,6 +1149,99 @@ export type Database = {
           },
         ]
       }
+      partner_relationship_snapshots: {
+        Row: {
+          client_visit_count: number
+          company_id: string
+          created_at: string
+          declared_brokers: number
+          duty_participation_count: number
+          id: string
+          legacy_activity_score: number | null
+          legacy_weights: Json
+          metadata: Json
+          partner_id: string
+          partner_service_count: number
+          portfolio_id: string | null
+          proposal_count: number
+          sale_count: number
+          snapshot_date: string
+          training_count: number
+        }
+        Insert: {
+          client_visit_count?: number
+          company_id: string
+          created_at?: string
+          declared_brokers?: number
+          duty_participation_count?: number
+          id?: string
+          legacy_activity_score?: number | null
+          legacy_weights?: Json
+          metadata?: Json
+          partner_id: string
+          partner_service_count?: number
+          portfolio_id?: string | null
+          proposal_count?: number
+          sale_count?: number
+          snapshot_date: string
+          training_count?: number
+        }
+        Update: {
+          client_visit_count?: number
+          company_id?: string
+          created_at?: string
+          declared_brokers?: number
+          duty_participation_count?: number
+          id?: string
+          legacy_activity_score?: number | null
+          legacy_weights?: Json
+          metadata?: Json
+          partner_id?: string
+          partner_service_count?: number
+          portfolio_id?: string | null
+          proposal_count?: number
+          sale_count?: number
+          snapshot_date?: string
+          training_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_relationship_snapshots_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_relationship_snapshots_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "platform_companies_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_relationship_snapshots_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_performance"
+            referencedColumns: ["partner_id"]
+          },
+          {
+            foreignKeyName: "partner_relationship_snapshots_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_relationship_snapshots_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_units: {
         Row: {
           address: string | null
@@ -1019,6 +1317,7 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          declared_broker_count: number | null
           document: string | null
           id: string
           metadata: Json
@@ -1030,6 +1329,7 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string
+          declared_broker_count?: number | null
           document?: string | null
           id?: string
           metadata?: Json
@@ -1041,6 +1341,7 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string
+          declared_broker_count?: number | null
           document?: string | null
           id?: string
           metadata?: Json
@@ -1113,6 +1414,133 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "platform_companies_overview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolio_partner_assignments: {
+        Row: {
+          company_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          is_current: boolean
+          partner_id: string
+          portfolio_id: string
+          started_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_current?: boolean
+          partner_id: string
+          portfolio_id: string
+          started_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_current?: boolean
+          partner_id?: string
+          portfolio_id?: string
+          started_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_partner_assignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_partner_assignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "platform_companies_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_partner_assignments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_performance"
+            referencedColumns: ["partner_id"]
+          },
+          {
+            foreignKeyName: "portfolio_partner_assignments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_partner_assignments_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolios: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          manager_name: string | null
+          manager_user_id: string | null
+          metadata: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          manager_name?: string | null
+          manager_user_id?: string | null
+          metadata?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          manager_name?: string | null
+          manager_user_id?: string | null
+          metadata?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolios_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolios_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "platform_companies_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolios_manager_user_id_fkey"
+            columns: ["manager_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1654,7 +2082,7 @@ export type CompositeTypes<
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
