@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  Activity,
   BarChart3,
   Building2,
   ChevronLeft,
@@ -20,21 +21,38 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const items = [
-  { href: '/', label: 'Overview', icon: LayoutDashboard },
-  { href: '/parceiros', label: 'Parceiros', icon: UsersRound },
-  { href: '/pipeline', label: 'Pipeline', icon: Network },
-  { href: '/empreendimentos', label: 'Empreendimentos', icon: Building2 },
-  { href: '/intelligence', label: 'Intelligence', icon: Sparkles },
-  { href: '/equipe', label: 'Equipe', icon: CircleUserRound },
-  { href: '/importar-dados', label: 'Importar dados', icon: FileUp },
-  { href: '/admin', label: 'Admin', icon: Settings2 },
+  { href: '/', label: 'Overview', icon: LayoutDashboard, permission: 'overview_view' },
+  { href: '/parceiros', label: 'Parceiros', icon: UsersRound, permission: 'partners_view' },
+  { href: '/atividades', label: 'Atividades', icon: Activity, permission: 'activities_log' },
+  { href: '/pipeline', label: 'Pipeline', icon: Network, permission: 'pipeline_view' },
+  { href: '/empreendimentos', label: 'Empreendimentos', icon: Building2, permission: 'developments_view' },
+  { href: '/equipe', label: 'Equipe', icon: CircleUserRound, permission: 'team_view' },
+  { href: '/intelligence', label: 'Intelligence', icon: Sparkles, permission: 'intelligence_view' },
+  { href: '/importar-dados', label: 'Importar dados', icon: FileUp, permission: 'imports_execute' },
+  { href: '/admin', label: 'Admin', icon: Settings2, permission: 'admin_view' },
 ]
 
-export function AppShell({ children, companyName, role }: { children: React.ReactNode; companyName?: string; role?: string }) {
+export function AppShell({
+  children,
+  companyName,
+  role,
+  permissions,
+}: {
+  children: React.ReactNode
+  companyName?: string
+  role?: string
+  permissions?: string[]
+}) {
   const pathname = usePathname() ?? '/'
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
+
+  const canSee = (permission: string) => {
+    if (role === 'admin') return true
+    if (!permissions) return true
+    return permission === 'overview_view' || permissions.includes(permission)
+  }
 
   async function signOut() {
     setIsSigningOut(true)
@@ -57,7 +75,7 @@ export function AppShell({ children, companyName, role }: { children: React.Reac
         </div>
 
         <nav className="nav" aria-label="Navegação principal">
-          {items.map(({ href, label, icon: Icon }) => {
+          {items.filter((item) => canSee(item.permission)).map(({ href, label, icon: Icon }) => {
             const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
             return <Link className={`nav-link ${active ? 'active' : ''}`} href={href} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>
           })}
