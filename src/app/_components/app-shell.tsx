@@ -13,7 +13,9 @@ import {
   LogOut,
   Network,
   Settings2,
+  SlidersHorizontal,
   Sparkles,
+  Target,
   UsersRound,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -27,10 +29,12 @@ const items = [
   { href: '/atividades', label: 'Atividades', icon: Activity, permission: 'activities_log' },
   { href: '/pipeline', label: 'Pipeline', icon: Network, permission: 'pipeline_view' },
   { href: '/empreendimentos', label: 'Empreendimentos', icon: Building2, permission: 'developments_view' },
+  { href: '/metas', label: 'Metas', icon: Target, permission: 'overview_view' },
   { href: '/equipe', label: 'Equipe', icon: CircleUserRound, permission: 'team_view' },
   { href: '/intelligence', label: 'Intelligence', icon: Sparkles, permission: 'intelligence_view' },
   { href: '/acoes', label: 'Plano de ação', icon: ListChecks, permission: 'intelligence_view' },
   { href: '/importar-dados', label: 'Importar dados', icon: FileUp, permission: 'imports_execute' },
+  { href: '/admin/intelligence', label: 'Config. inteligência', icon: SlidersHorizontal, permission: 'settings_manage' },
   { href: '/admin', label: 'Admin', icon: Settings2, permission: 'admin_view' },
 ]
 
