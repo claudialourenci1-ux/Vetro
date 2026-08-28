@@ -2,16 +2,22 @@ import Link from 'next/link'
 import { getCurrentProfile, requireAuthenticatedUser } from '@/lib/auth/server'
 import { getCompanyWorkspace } from '@/lib/workspace/server'
 import { AppShell, PageHeading } from './_components/app-shell'
+import { CommercialCockpit } from './_components/commercial-cockpit'
 import { PlatformShell } from './_components/platform-shell'
 import { OnboardingCard } from './_components/onboarding-card'
 
 type DataRecord = Record<string, unknown>
+type SearchParams = { from?: string | string[]; to?: string | string[]; development?: string | string[] }
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 const number = (value: unknown) => new Intl.NumberFormat('pt-BR').format(Number(value ?? 0))
 const value = (row: DataRecord | null, keys: string[]) => keys.map((key) => row?.[key]).find((item) => item !== undefined && item !== null)
 const dateTime = (value: unknown) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(String(value))) : 'Sem atividade'
+const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value
+const validDate = (value: string | undefined) => Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value))
+const validUuid = (value: string | undefined) => Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))
+const iso = (date: Date) => date.toISOString().slice(0, 10)
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const { supabase, user } = await requireAuthenticatedUser()
   const profile = await getCurrentProfile(user.id)
 
@@ -62,36 +68,54 @@ export default async function HomePage() {
   }
 
   const workspace = await getCompanyWorkspace()
-  const companyId = workspace?.company.id
+  if (!workspace) {
+    return <AppShell><OnboardingCard /></AppShell>
+  }
 
-  const [metricsResult, rankingResult, pipelineResult] = companyId ? await Promise.all([
-    supabase.rpc('get_overview_metrics', { target_company_id: companyId }),
-    supabase.from('partner_performance').select('*').eq('company_id', companyId).order('gross_sales_value', { ascending: false }).limit(5),
-    supabase.from('pipeline_overview').select('*').eq('company_id', companyId),
-  ]) : [{ data: null }, { data: [] }, { data: [] }]
+  const requested = await searchParams ?? {}
+  const today = new Date()
+  const defaultFromDate = new Date(today)
+  defaultFromDate.setUTCDate(defaultFromDate.getUTCDate() - 29)
+  const requestedFrom = first(requested.from)
+  const requestedTo = first(requested.to)
+  const requestedDevelopment = first(requested.development)
+  const dateFrom = validDate(requestedFrom) ? requestedFrom! : iso(defaultFromDate)
+  const dateTo = validDate(requestedTo) ? requestedTo! : iso(today)
+  const safeFrom = dateFrom <= dateTo ? dateFrom : dateTo
+  const safeTo = dateFrom <= dateTo ? dateTo : dateFrom
+  const developmentId = validUuid(requestedDevelopment) ? requestedDevelopment : undefined
 
-  const metrics = metricsResult.data as DataRecord | null
-  const ranking = (rankingResult.data ?? []) as DataRecord[]
-  const pipeline = (pipelineResult.data ?? []) as DataRecord[]
-  const cards = [
-    ['Parceiros ativos', number(value(metrics, ['partners', 'active_partners']))],
-    ['Corretores ativos', number(value(metrics, ['active_brokers', 'brokers']))],
-    ['Oportunidades', number(value(metrics, ['opportunities', 'total_opportunities']))],
-    ['Vendas', number(value(metrics, ['sales', 'total_sales']))],
-    ['VGV', brl.format(Number(value(metrics, ['gross_sales_value', 'vgv', 'sales_value']) ?? 0))],
-    ['Conversão', `${Number(value(metrics, ['conversion_rate', 'conversion']) ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`],
-  ]
+  type CockpitRpcClient = {
+    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>
+  }
+  const cockpitClient = supabase as unknown as CockpitRpcClient
+  const cockpitArgs: Record<string, unknown> = {
+    target_company_id: workspace.company.id,
+    date_from: safeFrom,
+    date_to: safeTo,
+  }
+  if (developmentId) cockpitArgs.target_development_id = developmentId
+
+  const [cockpitResult, developmentsResult] = await Promise.all([
+    cockpitClient.rpc('get_commercial_cockpit', cockpitArgs),
+    supabase.from('developments').select('id,name').eq('company_id', workspace.company.id).eq('status', 'active').order('name'),
+  ])
 
   return (
-    <AppShell companyName={workspace?.company.name} role={workspace?.membership.role} permissions={workspace?.permissions}>
-      <PageHeading eyebrow="Overview" title={workspace?.company.name ?? 'Sua operação comercial'} />
-      {!workspace ? <OnboardingCard /> : <>
-        <section className="metric-grid">{cards.map(([label, cardValue]) => <article className="metric-card" key={String(label)}><div className="metric-label">{label}</div><div className="metric">{cardValue}</div></article>)}</section>
-        <section className="overview-grid">
-          <article className="data-panel"><div className="panel-heading"><div><p className="eyebrow">Parceiros</p><h2>Ranking de performance</h2></div><span>Top 5</span></div>{ranking.length ? <ol className="ranking-list">{ranking.map((partner, index) => <li key={String(value(partner, ['partner_id', 'id', 'partner_name']))}><b>{String(value(partner, ['partner_name', 'name']) ?? 'Parceiro')}</b><span>#{index + 1} · {brl.format(Number(value(partner, ['gross_sales_value', 'sales_value', 'vgv']) ?? 0))}</span></li>)}</ol> : <p className="panel-empty">Ainda não há performance de parceiros para este período.</p>}</article>
-          <article className="data-panel"><div className="panel-heading"><div><p className="eyebrow">Pipeline</p><h2>Visão por etapa</h2></div><span>{pipeline.length} etapas</span></div>{pipeline.length ? <div className="pipeline-list">{pipeline.map((stage) => <div className="pipeline-row" key={String(value(stage, ['stage_id', 'id', 'stage_name']))}><span>{String(value(stage, ['stage_name', 'name']) ?? 'Etapa')}</span><b>{number(value(stage, ['opportunities', 'opportunity_count', 'count']))}</b></div>)}</div> : <p className="panel-empty">O pipeline aparecerá aqui quando as oportunidades entrarem na operação.</p>}</article>
-        </section>
-      </>}
+    <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}>
+      {cockpitResult.error ? (
+        <section className="workspace-error"><strong>Não foi possível carregar o cockpit comercial.</strong><span>{cockpitResult.error.message}</span></section>
+      ) : (
+        <CommercialCockpit
+          companyId={workspace.company.id}
+          companyName={workspace.company.name}
+          dateFrom={safeFrom}
+          dateTo={safeTo}
+          developments={(developmentsResult.data ?? []) as Array<{ id: string; name: string }>}
+          raw={cockpitResult.data}
+          selectedDevelopmentId={developmentId}
+        />
+      )}
     </AppShell>
   )
 }
