@@ -9,7 +9,8 @@ VETRO is a B2B SaaS for commercial intelligence and sales management for real-es
 - Project ref: `lcyrkagglsyjrmntwfek`
 - Never create a second Supabase project.
 - Never bypass RLS in frontend code.
-- Never expose service-role keys to the browser.
+- Never expose service-role keys or OpenAI API keys to the browser.
+- Database-calculated commercial metrics are authoritative. AI may interpret them but must not become the source of truth for KPIs.
 
 ## Stack
 - Next.js App Router
@@ -17,6 +18,7 @@ VETRO is a B2B SaaS for commercial intelligence and sales management for real-es
 - Supabase Auth + PostgreSQL + Storage + Edge Functions
 - `@supabase/ssr` for browser/server clients and auth proxy
 - Vercel deployment target
+- OpenAI Responses API may be used server-side for executive interpretation and action recommendations
 
 ## Two product contexts
 VETRO has two distinct authenticated experiences and they must never be conflated.
@@ -44,6 +46,8 @@ Workspace navigation:
 6. Equipe
 7. Importar dados
 8. Admin
+
+The Overview is the commercial cockpit, not a shallow KPI summary. It should progressively expose real data for VGV evolution, period comparison, goals, forecast, pipeline, stage aging, partner performance, development performance, inventory/absorption, concentration, V6, attention signals and recommended actions.
 
 Never show company first-access onboarding to a `super_admin` as the primary platform experience.
 
@@ -106,11 +110,12 @@ Available permissions:
 Permission records live in `company_member_permissions`.
 Use the backend as the source of truth. Hiding a menu is not authorization.
 
-RPCs:
+RPCs include:
 - `get_my_company_permissions(target_company_id)` returns the current user's effective permissions.
 - `set_member_permissions(target_company_id, target_user_id, permission_list)` is restricted to company admins and only targets active collaborators.
 - `get_platform_overview_metrics()` is for the super-admin Control Center.
 - `get_platform_recent_activity(limit_rows)` is for the super-admin audit/activity experience.
+- `get_commercial_cockpit(...)` returns the authorized commercial cockpit payload for a company and period.
 
 Platform view:
 - `platform_companies_overview` provides company-level operational rollups to super admins under RLS.
@@ -127,17 +132,67 @@ The RLS layer already enforces permission gates on strategic data and write oper
 
 Do not invent or hardcode formulas for individual dimensions unless they already exist in the backend configuration. The weighted overall score is calculated by the database.
 
+## Commercial intelligence architecture
+The database computes facts; AI interprets facts.
+
+Deterministic/backend responsibilities include:
+- KPI values and period comparisons
+- goal attainment and gap
+- run-rate forecast
+- pipeline values and stage counts
+- opportunity aging
+- partner and development performance
+- inventory and absorption
+- sales concentration
+- V6 values
+- deterministic commercial signals when rules are available
+
+AI responsibilities may include:
+- executive summary
+- attention-point prioritization
+- explanation of patterns supported by the supplied data
+- recommended commercial actions
+- what to watch next
+- data-quality warnings
+
+AI must never:
+- invent metrics, goals, customers, causes or events
+- silently overwrite operational data
+- execute recommended commercial actions without an explicit product workflow/user decision
+- claim causality when the evidence only supports correlation
+- expose raw secret keys client-side
+
+Persist AI briefs with the exact source snapshot/hash used to generate them so recommendations remain auditable.
+
 ## Existing backend entities
-`profiles`, `companies`, `company_memberships`, `company_member_permissions`, `company_settings`, `partners`, `partner_aliases`, `partner_units`, `brokers`, `broker_partner_memberships`, `developments`, `pipeline_stages`, `opportunities`, `activities`, `sales`, `imports`, `import_rows`, `v6_dimension_configs`, `v6_scores`, `partner_metrics_daily`, `audit_events`.
+Core entities include `profiles`, `companies`, `company_memberships`, `company_member_permissions`, `company_settings`, `partners`, `partner_aliases`, `partner_units`, `brokers`, `broker_partner_memberships`, `developments`, `pipeline_stages`, `opportunities`, `activities`, `sales`, `imports`, `import_rows`, `v6_dimension_configs`, `v6_scores`, `partner_metrics_daily`, `audit_events`, `portfolios`, `portfolio_partner_assignments`, `commercial_goals`, `partner_relationship_snapshots`, `activity_brokers`.
 
-Views / RPCs include `partner_performance`, `pipeline_overview`, `get_overview_metrics`, `get_my_company_permissions`, `set_member_permissions`, `platform_companies_overview`, `get_platform_overview_metrics`, and `get_platform_recent_activity`.
+Commercial intelligence entities include `inventory_units`, `inventory_unit_events`, `opportunity_stage_history`, `commercial_signals`, `forecast_snapshots`, `ai_briefs`, and `commercial_actions`.
 
-Edge Functions include `bootstrap-admin` and `invite-member`.
+Views / RPCs include `partner_performance`, `pipeline_overview`, `get_overview_metrics`, `get_my_company_permissions`, `set_member_permissions`, `platform_companies_overview`, `get_platform_overview_metrics`, `get_platform_recent_activity`, and `get_commercial_cockpit`.
+
+Edge Functions include `bootstrap-admin`, `invite-member`, and `commercial-brief`.
 
 Private import bucket: `vetro-imports`.
 
 ## UX direction
-Premium B2B technology product. Clean, dense enough for operations, highly legible, desktop-first but responsive. Core palette: violet/purple, graphite/black, white. Preserve the VETRO wordmark direction and three-stripe E-inspired mark.
+Premium B2B enterprise technology product. Clean, compact, dense enough for commercial operations, highly legible, desktop-first but genuinely responsive.
+
+Official product palette:
+- Deep background: `#051F20`
+- Secondary background: `#0B2B26`
+- Raised surfaces: `#163832`
+- Structural/interactive green: `#235347`
+- Institutional green: `#8EB69B`
+- Soft green: `#B8D3C0`
+- Highlight: `#DAF1DE`
+- Primary text: `#F3F7F4`
+- Secondary text: `#C8D5CD`
+- Muted text: `#8FA59A`
+
+ZERO violet, purple, lilac or magenta in product UI, charts, focus states, shadows, gradients or decorative assets.
+Preserve the VETRO wordmark direction and three-stripe E-inspired mark while adapting it to the approved green identity.
+Prefer smaller typography, compact cards, subtle borders, restrained glow and high information density. Do not create generic AI-dashboard card soup.
 
 ## Working rules
 - Inspect existing code before changing it.
@@ -149,6 +204,8 @@ Premium B2B technology product. Clean, dense enough for operations, highly legib
 - Do not add public signup or self-service account creation.
 - Menus, routes and actions must reflect effective backend permissions.
 - Never rely on frontend visibility as the security boundary.
+- Do not seed production merely to make dashboards look full.
+- Preserve real business data and make the UI adapt to it.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
