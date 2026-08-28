@@ -20,7 +20,7 @@ export default async function GoalsPage(){
   if(error)return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}><section className="workspace-error"><strong>Não foi possível carregar as metas.</strong><span>{error.message}</span></section></AppShell>
   const payload=asRecord(data),summary=asRecord(payload.summary),progress=asRecord(payload.vgv_progress),catalog=asRows(payload.catalog),indicatorSummary=asRows(payload.indicator_summary),goals=asRows(payload.goals),developments=asRows(payload.developments),portfolios=asRows(payload.portfolios)
   const canManage=['admin','manager'].includes(workspace.membership.role)
-  const catalogWithSummary=catalog.map((item)=>({...item,summary:indicatorSummary.find((row)=>text(row.indicator_key)===text(item.key))}))
+  const catalogWithSummary=catalog.map((item)=>({...item,summary:indicatorSummary.find((row)=>text(row.indicator_key)===text(item.key))})) as Array<Row&{summary?:Row}>
   const companyYearGoals=goals.filter((g)=>text(g.scope_type)==='company'&&new Date(`${text(g.period_start)}T12:00:00Z`).getUTCFullYear()===year)
   const monthMap=new Map<string,Row>();for(const g of companyYearGoals){const m=new Date(`${text(g.period_start)}T12:00:00Z`).getUTCMonth();monthMap.set(`${text(g.indicator_key)}:${m}`,g)}
   const monthStart=new Date(Date.UTC(year,now.getUTCMonth(),1)),monthEnd=new Date(Date.UTC(year,now.getUTCMonth()+1,0))
