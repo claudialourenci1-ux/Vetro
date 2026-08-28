@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  BrainCircuit,
   Building2,
   ChevronLeft,
   ChevronRight,
@@ -21,6 +22,7 @@ const platformItems = [
   { href: '/platform', label: 'Visão geral', icon: Gauge },
   { href: '/platform/empresas', label: 'Empresas', icon: Building2 },
   { href: '/platform/usuarios', label: 'Usuários', icon: UsersRound },
+  { href: '/platform/intelligence', label: 'Inteligência interna', icon: BrainCircuit },
   { href: '/platform/atividade', label: 'Atividade', icon: Activity },
   { href: '/platform/saude', label: 'Saúde da plataforma', icon: ShieldCheck },
   { href: '/platform/configuracoes', label: 'Configurações', icon: Settings2 },
