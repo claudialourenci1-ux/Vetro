@@ -1,4 +1,4 @@
-import { Activity, BarChart3, Building2, CalendarDays, Flame, Network, Plus, Search, UsersRound } from 'lucide-react'
+import { Activity, BarChart3, Building2, Flame, Network, Plus, Search, UsersRound } from 'lucide-react'
 import Link from 'next/link'
 import { AppShell, PageHeading } from '../_components/app-shell'
 import { createClient } from '@/lib/supabase/server'
@@ -10,7 +10,6 @@ type Row = Record<string, unknown>
 type RpcClient = { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> }
 type SearchParams = { from?: string|string[]; to?: string|string[]; type?: string|string[]; portfolio?: string|string[]; q?: string|string[] }
 const integer = new Intl.NumberFormat('pt-BR')
-const decimal = new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1})
 const shortDate = new Intl.DateTimeFormat('pt-BR',{dateStyle:'short'})
 const dateTime = new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'})
 const first = (v:string|string[]|undefined)=>Array.isArray(v)?v[0]:v
@@ -44,7 +43,8 @@ export default async function ActivitiesPage({searchParams}:{searchParams?:Promi
   const visible=recent.filter((row)=>{if(typeFilter&&text(row.activity_type)!==typeFilter)return false;if(portfolioFilter&&text(row.portfolio_id)!==portfolioFilter)return false;if(!query)return true;return [row.partner_name,row.broker_name,row.development_name,row.client_name,row.visit_summary,row.portfolio_name].map((v)=>text(v).toLocaleLowerCase('pt-BR')).join(' ').includes(query)})
   const maxDaily=Math.max(...daily.map((r)=>amount(r.quantity)),1),maxType=Math.max(...types.map((r)=>amount(r.quantity)),1)
   const canLog=workspace.membership.role==='admin'||workspace.membership.role==='manager'||workspace.permissions.includes('activities_log')
-  const localNow=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)
+  const localToday=new Date(today.getTime()-today.getTimezoneOffset()*60000)
+  const localNow=localToday.toISOString().slice(0,16)
   return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}>
     <PageHeading eyebrow="Atividades" title="Pulso da operação" context={`${shortDate.format(new Date(`${safeFrom}T12:00:00`))} a ${shortDate.format(new Date(`${safeTo}T12:00:00`))} · rotina comercial registrada`}>
       <Link className={styles.pipelineLink} href="/pipeline">Abrir pipeline <Network size={14}/></Link>
