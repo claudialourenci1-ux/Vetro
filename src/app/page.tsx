@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { getCurrentProfile, requireAuthenticatedUser } from '@/lib/auth/server'
+import { getCurrentProfile, getCurrentUser } from '@/lib/auth/server'
 import { getCompanyWorkspace } from '@/lib/workspace/server'
 import { AppShell, PageHeading } from './_components/app-shell'
 import { CommercialCockpit } from './_components/commercial-cockpit'
+import { LandingPage } from './_components/landing-page'
 import { PlatformShell } from './_components/platform-shell'
 import { OnboardingCard } from './_components/onboarding-card'
 
@@ -18,9 +19,10 @@ const validUuid = (value: string | undefined) => Boolean(value && /^[0-9a-f]{8}-
 const iso = (date: Date) => date.toISOString().slice(0, 10)
 
 export default async function HomePage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
-  const { supabase, user } = await requireAuthenticatedUser()
-  const profile = await getCurrentProfile(user.id)
+  const { supabase, user } = await getCurrentUser()
+  if (!user) return <LandingPage />
 
+  const profile = await getCurrentProfile(user.id)
   if (profile?.global_role === 'super_admin') {
     const [metricsResult, companiesResult, activityResult] = await Promise.all([
       supabase.rpc('get_platform_overview_metrics'),
@@ -38,6 +40,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
       ['Parceiros', number(value(metrics, ['partners']))],
       ['VGV acompanhado', brl.format(Number(value(metrics, ['gross_sales_value']) ?? 0))],
     ]
+
     return <PlatformShell>
       <PageHeading eyebrow="VETRO Platform" title="Control Center"><Link className="primary action-link" href="/platform/empresas">+ Nova empresa</Link></PageHeading>
       <section className="platform-hero"><div><p className="eyebrow">Pulso da VETRO</p><h2>Acompanhe o coração da plataforma.</h2><p className="subtle">Empresas, usuários, operação comercial, atividade e sinais de atenção em um único lugar.</p></div><div className="platform-pulse-status"><span className="workspace-dot" /><b>Plataforma operacional</b></div></section>
@@ -85,34 +88,34 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
     const source = cockpitData as DataRecord
     const progress = goalResult.data as DataRecord
     const sourceForecast = source.forecast && typeof source.forecast === 'object' && !Array.isArray(source.forecast) ? source.forecast as DataRecord : {}
-    if (progress.active === true) {
-      cockpitData = {
-        ...source,
-        goal: {
-          target: progress.target,
-          realized: progress.realized,
-          attainment_pct: progress.attainment_pct,
-          gap: progress.gap,
-          remaining_daily_pace: progress.remaining_daily_pace,
-          period_start: progress.period_start,
-          period_end: progress.period_end,
-          remaining_days: progress.remaining_days,
-        },
-        forecast: {
-          ...sourceForecast,
-          run_rate_forecast: progress.run_rate_forecast,
-          target: progress.target,
-          confidence: progress.confidence,
-          goal_period_start: progress.period_start,
-          goal_period_end: progress.period_end,
-        },
-      }
-    } else {
-      cockpitData = { ...source, goal: {}, forecast: { ...sourceForecast, target: null } }
-    }
+    cockpitData = progress.active === true
+      ? {
+          ...source,
+          goal: {
+            target: progress.target,
+            realized: progress.realized,
+            attainment_pct: progress.attainment_pct,
+            gap: progress.gap,
+            remaining_daily_pace: progress.remaining_daily_pace,
+            period_start: progress.period_start,
+            period_end: progress.period_end,
+            remaining_days: progress.remaining_days,
+          },
+          forecast: {
+            ...sourceForecast,
+            run_rate_forecast: progress.run_rate_forecast,
+            target: progress.target,
+            confidence: progress.confidence,
+            goal_period_start: progress.period_start,
+            goal_period_end: progress.period_end,
+          },
+        }
+      : { ...source, goal: {}, forecast: { ...sourceForecast, target: null } }
   }
 
   return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}>
-    {cockpitResult.error ? <section className="workspace-error"><strong>Não foi possível carregar o cockpit comercial.</strong><span>{cockpitResult.error.message}</span></section> : <CommercialCockpit companyId={workspace.company.id} companyName={workspace.company.name} dateFrom={safeFrom} dateTo={safeTo} developments={(developmentsResult.data ?? []) as Array<{ id: string; name: string }>} raw={cockpitData} selectedDevelopmentId={developmentId}/>} 
+    {cockpitResult.error
+      ? <section className="workspace-error"><strong>Não foi possível carregar o cockpit comercial.</strong><span>{cockpitResult.error.message}</span></section>
+      : <CommercialCockpit companyId={workspace.company.id} companyName={workspace.company.name} dateFrom={safeFrom} dateTo={safeTo} developments={(developmentsResult.data ?? []) as Array<{ id: string; name: string }>} raw={cockpitData} selectedDevelopmentId={developmentId} />}
   </AppShell>
 }
