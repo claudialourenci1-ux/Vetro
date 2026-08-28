@@ -38,17 +38,7 @@ const items = [
   { href: '/admin', label: 'Admin', icon: Settings2, permission: 'admin_view' },
 ]
 
-export function AppShell({
-  children,
-  companyName,
-  role,
-  permissions,
-}: {
-  children: React.ReactNode
-  companyName?: string
-  role?: string
-  permissions?: string[]
-}) {
+export function AppShell({ children, companyName, role, permissions }: { children: React.ReactNode; companyName?: string; role?: string; permissions?: string[] }) {
   const pathname = usePathname() ?? '/'
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
@@ -60,6 +50,12 @@ export function AppShell({
     return permission === 'overview_view' || permissions.includes(permission)
   }
 
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    if (href === '/admin') return pathname === '/admin'
+    return pathname === href || pathname.startsWith(`${href}/`)
+  }
+
   async function signOut() {
     setIsSigningOut(true)
     await createClient().auth.signOut()
@@ -67,37 +63,22 @@ export function AppShell({
     router.refresh()
   }
 
-  return (
-    <div className={`app-shell ${collapsed ? 'is-collapsed' : ''}`}>
-      <aside className="sidebar">
-        <div className="sidebar-head">
-          <Link className="brand" href="/" aria-label="VETRO overview">
-            <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
-            <strong>VETRO</strong>
-          </Link>
-          <button className="icon-button collapse-button" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}>
-            {collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
-          </button>
-        </div>
-
-        <nav className="nav" aria-label="Navegação principal">
-          {items.filter((item) => canSee(item.permission)).map(({ href, label, icon: Icon }) => {
-            const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
-            return <Link className={`nav-link ${active ? 'active' : ''}`} href={href} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>
-          })}
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="workspace-summary">
-            <span className="workspace-dot" />
-            <span><b>{companyName ?? 'Workspace VETRO'}</b><small>{role?.replace('_', ' ') ?? 'acesso protegido'}</small></span>
-          </div>
-          <button className="nav-link sign-out" onClick={signOut} disabled={isSigningOut} title={collapsed ? 'Sair' : undefined}><LogOut size={18} /><span>{isSigningOut ? 'Saindo…' : 'Sair'}</span></button>
-        </div>
-      </aside>
-      <main className="main-content">{children}</main>
-    </div>
-  )
+  return <div className={`app-shell ${collapsed ? 'is-collapsed' : ''}`}>
+    <aside className="sidebar">
+      <div className="sidebar-head">
+        <Link className="brand" href="/" aria-label="VETRO overview"><span className="brand-mark" aria-hidden="true"><i /><i /><i /></span><strong>VETRO</strong></Link>
+        <button className="icon-button collapse-button" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}>{collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}</button>
+      </div>
+      <nav className="nav" aria-label="Navegação principal">
+        {items.filter((item) => canSee(item.permission)).map(({ href, label, icon: Icon }) => <Link className={`nav-link ${isActive(href) ? 'active' : ''}`} href={href} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>)}
+      </nav>
+      <div className="sidebar-footer">
+        <div className="workspace-summary"><span className="workspace-dot" /><span><b>{companyName ?? 'Workspace VETRO'}</b><small>{role?.replace('_', ' ') ?? 'acesso protegido'}</small></span></div>
+        <button className="nav-link sign-out" onClick={signOut} disabled={isSigningOut} title={collapsed ? 'Sair' : undefined}><LogOut size={18} /><span>{isSigningOut ? 'Saindo…' : 'Sair'}</span></button>
+      </div>
+    </aside>
+    <main className="main-content">{children}</main>
+  </div>
 }
 
 export function PageHeading({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
