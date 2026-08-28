@@ -3,7 +3,6 @@ import {
   AlertTriangle, ArrowDownRight, ArrowUpRight, Boxes, Building2,
   ChartNoAxesCombined, Clock3, Gauge, Network, Sparkles, Target, UsersRound,
 } from 'lucide-react'
-import { AiBriefButton } from './ai-brief-button'
 
 type VgvPoint = { date: string; vgv: number; sales: number }
 type FunnelRow = { stage_id?: string | null; stage: string; position: number; opportunities: number; pipeline_value: number; avg_age_days: number }
@@ -91,14 +90,14 @@ function freshness(value?: string | null) {
   try { return `Dados atualizados em ${dateTime.format(new Date(value))}` } catch { return 'Atualização disponível' }
 }
 
-export function CommercialCockpit({ raw, companyId, companyName, dateFrom, dateTo, developments, selectedDevelopmentId }: {
+export function CommercialCockpit({ raw, companyName, dateFrom, dateTo, developments, selectedDevelopmentId }: {
   raw: unknown; companyId: string; companyName: string; dateFrom: string; dateTo: string; developments: Array<{ id: string; name: string }>; selectedDevelopmentId?: string
 }) {
   const data = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as CockpitData
   const kpis = data.kpis ?? {}, changes = kpis.changes ?? {}, goal = data.goal ?? {}, forecast = data.forecast ?? {}, v6 = data.v6 ?? {}, inventory = data.inventory ?? {}, concentration = data.concentration ?? {}
   const funnel = safeArray<FunnelRow>(data.funnel), partners = safeArray<PartnerRow>(data.partners), developmentRows = safeArray<DevelopmentRow>(data.developments), points = safeArray<VgvPoint>(data.vgv_series)
-  const signals = safeArray<SignalRow>(data.signals), aiBrief = data.latest_ai_brief ?? null, aiAttention = safeArray<AiAttention>(aiBrief?.attention_points), aiActions = safeArray<AiAction>(aiBrief?.recommended_actions)
-  const attention: SignalRow[] = signals.length ? signals : aiAttention.map((item, index) => ({ id:`ai-${index}`, severity:item.severity, title:item.title, message:item.why_it_matters, recommended_action:item.recommended_action, last_seen_at:undefined }))
+  const signals = safeArray<SignalRow>(data.signals), executiveBrief = data.latest_ai_brief ?? null, briefAttention = safeArray<AiAttention>(executiveBrief?.attention_points), briefActions = safeArray<AiAction>(executiveBrief?.recommended_actions)
+  const attention: SignalRow[] = signals.length ? signals : briefAttention.map((item, index) => ({ id:`insight-${index}`, severity:item.severity, title:item.title, message:item.why_it_matters, recommended_action:item.recommended_action, last_seen_at:undefined }))
   const aging = data.aging ?? {}
   const staleCount = ['6_10','11_20','21_plus'].reduce((sum,key) => sum+n(aging[key]?.count),0)
   const staleValue = ['6_10','11_20','21_plus'].reduce((sum,key) => sum+n(aging[key]?.value),0)
@@ -137,7 +136,7 @@ export function CommercialCockpit({ raw, companyId, companyName, dateFrom, dateT
     <section className="cockpit-panel cockpit-v6-panel"><PanelHeading eyebrow="V6 — MÉTODO VETRO" title="Saúde da rede comercial" aside={<span className="cockpit-panel-meta">{integer.format(n(v6.partners_scored))} parceiros avaliados</span>}/><div className="cockpit-v6-grid"><V6Ring caption="Qualidade e frequência" label="Relacionamento" value={v6.v1}/><V6Ring caption="Capacidade de mobilizar" label="Ativação" value={v6.v2}/><V6Ring caption="Geração qualificada" label="Oportunidades" value={v6.v3}/><V6Ring caption="Eficiência no funil" label="Conversão" value={v6.v4}/><V6Ring caption="VGV e produção" label="Valor" value={v6.v5}/><V6Ring caption="Regularidade de resultado" label="Consistência" value={v6.v6}/></div></section>
 
     <section className="cockpit-mid-grid"><article className="cockpit-panel"><PanelHeading eyebrow="ESTOQUE" title="Absorção comercial" aside={<Boxes size={17}/>}/><div className="cockpit-stock-hero"><strong>{inventory.absorption_pct == null ? '—' : pct(inventory.absorption_pct)}</strong><span>absorvido</span></div><div className="cockpit-stock-grid"><div><span>Disponíveis</span><strong>{integer.format(n(inventory.available_units))}</strong></div><div><span>Reservadas</span><strong>{integer.format(n(inventory.reserved_units))}</strong></div><div><span>Vendidas</span><strong>{integer.format(n(inventory.sold_units))}</strong></div><div><span>VGV disponível</span><strong>{compactMoney.format(n(inventory.available_value))}</strong></div></div></article>
-      <article className="cockpit-panel cockpit-ai-panel"><PanelHeading eyebrow="VETRO AI" title="Leitura executiva" aside={<Sparkles size={17}/>}/>{aiBrief?.executive_summary ? <><p className="cockpit-ai-summary">{aiBrief.executive_summary}</p><div className="cockpit-ai-actions">{aiActions.slice(0,3).map((action,index)=><div key={`${action.title}-${index}`}><Severity value={action.priority === 'critical' ? 'critical' : action.priority === 'high' ? 'warning' : 'opportunity'}/><strong>{action.title}</strong><span>{action.expected_impact}</span></div>)}</div><small className="cockpit-ai-meta">{aiBrief.model ? `Modelo: ${aiBrief.model}` : 'VETRO Intelligence'}{aiBrief.generated_at ? ` · ${dateTime.format(new Date(aiBrief.generated_at))}` : ''}</small></> : <p className="cockpit-panel-copy">A camada de IA interpreta os números calculados pela VETRO e transforma desempenho, gargalos e riscos em resumo executivo e recomendações. Nenhum KPI é calculado pelo modelo.</p>}<AiBriefButton companyId={companyId} dateFrom={dateFrom} dateTo={dateTo} developmentId={selectedDevelopmentId}/></article>
+      <article className="cockpit-panel cockpit-ai-panel"><PanelHeading eyebrow="VETRO INTELLIGENCE" title="Leitura executiva" aside={<Sparkles size={17}/>}/>{executiveBrief?.executive_summary ? <><p className="cockpit-ai-summary">{executiveBrief.executive_summary}</p><div className="cockpit-ai-actions">{briefActions.slice(0,3).map((action,index)=><div key={`${action.title}-${index}`}><Severity value={action.priority === 'critical' ? 'critical' : action.priority === 'high' ? 'warning' : 'opportunity'}/><strong>{action.title}</strong><span>{action.expected_impact}</span></div>)}</div>{executiveBrief.generated_at ? <small className="cockpit-ai-meta">Atualizado em {dateTime.format(new Date(executiveBrief.generated_at))}</small> : null}</> : <p className="cockpit-panel-copy">Nenhuma leitura executiva foi publicada pelo time VETRO para este recorte. Os indicadores e sinais objetivos continuam disponíveis normalmente.</p>}</article>
     </section>
   </div>
 }
