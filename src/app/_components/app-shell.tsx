@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
+  Menu,
   Network,
   Settings2,
   SlidersHorizontal,
@@ -42,6 +43,7 @@ export function AppShell({ children, companyName, role, permissions }: { childre
   const pathname = usePathname() ?? '/'
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   const canSee = (permission: string) => {
@@ -64,27 +66,28 @@ export function AppShell({ children, companyName, role, permissions }: { childre
   }
 
   return <div className={`app-shell ${collapsed ? 'is-collapsed' : ''}`}>
-    <aside className="sidebar">
+    <aside className={`sidebar ${mobileOpen ? 'is-mobile-open' : ''}`}>
       <div className="sidebar-head">
         <Link className="brand" href="/" aria-label="VETRO overview"><span className="brand-mark" aria-hidden="true"><i /><i /><i /></span><strong>VETRO</strong></Link>
         <button className="icon-button collapse-button" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}>{collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}</button>
+        <button className="icon-button mobile-nav-toggle" onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}><Menu size={17}/></button>
       </div>
       <nav className="nav" aria-label="Navegação principal">
-        {items.filter((item) => canSee(item.permission)).map(({ href, label, icon: Icon }) => <Link className={`nav-link ${isActive(href) ? 'active' : ''}`} href={href} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>)}
+        {items.filter((item) => canSee(item.permission)).map(({ href, label, icon: Icon }) => <Link className={`nav-link ${isActive(href) ? 'active' : ''}`} href={href} key={href} onClick={() => setMobileOpen(false)} title={collapsed ? label : undefined}><Icon size={18}/><span>{label}</span></Link>)}
       </nav>
       <div className="sidebar-footer">
-        <div className="workspace-summary"><span className="workspace-dot" /><span><b>{companyName ?? 'Workspace VETRO'}</b><small>{role?.replace('_', ' ') ?? 'acesso protegido'}</small></span></div>
-        <button className="nav-link sign-out" onClick={signOut} disabled={isSigningOut} title={collapsed ? 'Sair' : undefined}><LogOut size={18} /><span>{isSigningOut ? 'Saindo…' : 'Sair'}</span></button>
+        <div className="workspace-summary"><span className="workspace-dot"/><span><b>{companyName ?? 'Workspace VETRO'}</b><small>{role?.replace('_', ' ') ?? 'acesso protegido'}</small></span></div>
+        <button className="nav-link sign-out" onClick={signOut} disabled={isSigningOut} title={collapsed ? 'Sair' : undefined}><LogOut size={18}/><span>{isSigningOut ? 'Saindo…' : 'Sair'}</span></button>
       </div>
     </aside>
     <main className="main-content">{children}</main>
   </div>
 }
 
-export function PageHeading({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
-  return <header className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1></div>{children}</header>
+export function PageHeading({ eyebrow, title, context, children }: { eyebrow: string; title: string; context?: string; children?: React.ReactNode }) {
+  return <header className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1>{context ? <p className="page-context">{context}</p> : null}</div>{children}</header>
 }
 
 export function MetricIcon({ children }: { children: React.ReactNode }) {
-  return <span className="metric-icon"><BarChart3 size={17} />{children}</span>
+  return <span className="metric-icon"><BarChart3 size={17}/>{children}</span>
 }
