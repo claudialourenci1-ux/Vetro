@@ -55,7 +55,7 @@ export default async function DevelopmentDetailPage({params}:{params:Promise<{id
   const vgv=amount(product.gross_sales_value)
   const inventoryCount=amount(product.inventory_units)
   const conversion=amount(product.opportunities_count)>0?amount(product.won_opportunities_count)/amount(product.opportunities_count)*100:0
-  let attentionTitle=health==='traction'?'Produto em tração comercial':health==='cooling'?'Produto perdeu cadência recente':'Produto sem movimento recente'
+  const attentionTitle=health==='traction'?'Produto em tração comercial':health==='cooling'?'Produto perdeu cadência recente':'Produto sem movimento recente'
   let attentionCopy=health==='traction'?'Há atividade, oportunidade ou venda registrada nos últimos 30 dias.':health==='cooling'?`O último movimento ocorreu há ${movementDays??'mais de 30'} dias.`:'Não há movimentação comercial registrada nos últimos 90 dias.'
   if(canPipeline&&openCount>0)attentionCopy+=` O pipeline atual mantém ${integer.format(openCount)} oportunidade${openCount===1?'':'s'} aberta${openCount===1?'':'s'}, somando ${compactCurrency.format(openValue)}.`
   const maxStageValue=Math.max(...stages.map((row)=>amount(row.value)),1)
