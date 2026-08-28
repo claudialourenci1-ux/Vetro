@@ -42,11 +42,12 @@ Platform navigation:
 - Visão geral
 - Empresas
 - Usuários
+- Inteligência interna
 - Atividade
 - Saúde da plataforma
 - Configurações
 
-The Control Center must show real global metrics, company activity and access structure. A super admin can activate a company, invite its first admin, inspect company access, and view platform-wide activity.
+The Control Center must show real global metrics, company activity and access structure. A super admin can activate a company, invite its first admin, inspect company access, view platform-wide activity, configure internal intelligence and generate/publish executive intelligence for client workspaces.
 
 ### 2. Company workspace
 For company `admin`, `manager`, and `collaborator` users.
@@ -61,7 +62,7 @@ Workspace navigation:
 8. Intelligence / V6
 9. Plano de ação
 10. Importar dados
-11. Configuração de inteligência / Admin
+11. Admin
 
 The Overview is the commercial cockpit, not a shallow KPI summary. It should progressively expose real data for VGV evolution, period comparison, goals, forecast, pipeline, stage aging, partner performance, development performance, inventory/absorption, concentration, V6, attention signals and recommended actions.
 
@@ -75,17 +76,21 @@ VETRO is invitation-only. There is no public signup flow.
 - Can create/activate client companies.
 - Can create or authorize the first company admin.
 - Can access all companies and platform-level administration.
+- Is the only role allowed to configure or invoke AI/provider-backed intelligence generation.
 
 ### admin
 - Company administrator approved after the SaaS is contracted.
-- Can manage the company workspace, settings, team and permissions.
+- Can manage the company workspace, team and allowed client-facing permissions.
 - Can invite `manager` and `collaborator` users through the approved backend flow.
+- Cannot create another company admin.
 - Cannot access another company or platform-wide VETRO administration.
+- Cannot configure, invoke, inspect or identify the underlying AI/provider mechanism.
 
 ### manager
 - Commercial management role.
 - Can access operational and strategic company data needed to manage the commercial operation.
 - Cannot manage company administrators or platform ownership.
+- Cannot configure or invoke internal AI/provider controls.
 
 ### collaborator
 - Operational data-entry role.
@@ -125,6 +130,7 @@ Available permissions:
 
 Permission records live in `company_member_permissions`.
 Use the backend as the source of truth. Hiding a menu is not authorization.
+`settings_manage` must never be interpreted as permission to access OpenAI/model/provider controls; those are platform-internal and restricted to global `super_admin`.
 
 RPCs include:
 - `get_my_company_permissions(target_company_id)` returns the current user's effective permissions.
@@ -152,7 +158,19 @@ The RLS layer already enforces permission gates on strategic data and write oper
 Do not invent or hardcode formulas for individual dimensions unless they already exist in the backend configuration. The weighted overall score is calculated by the database.
 
 ## Commercial intelligence architecture
-The database computes facts; AI interprets facts.
+The database computes facts; the internal intelligence layer may interpret facts.
+
+### Client-facing rule
+Company users must see only the **resulting VETRO Intelligence**, never the underlying AI/provider mechanism.
+
+For company `admin`, `manager` and `collaborator` workspaces:
+- Do not show the words `OpenAI`, provider/model names, API-key state, AI enable/disable toggles or generation controls.
+- Do not expose a “Generate AI”, “VETRO AI”, model selector, AI settings page or provider status.
+- Published summaries/recommendations may appear only as `VETRO Intelligence`, `Leitura executiva`, `Inteligência VETRO`, `Pontos de atenção` or equivalent product language.
+- Company users may act on recommendations already published by VETRO, but they do not invoke the underlying model.
+- AI/provider configuration belongs only in `/platform/**` routes protected by `requireSuperAdmin()` and matching backend authorization.
+- Hiding controls is not enough: server functions and RPCs that configure or invoke provider-backed intelligence must explicitly require global `super_admin`.
+- Client-facing RPC payloads must not include model/provider names, AI configuration state or internal AI brief identifiers when they are not operationally required.
 
 Deterministic/backend responsibilities include:
 - KPI values and period comparisons
@@ -166,7 +184,7 @@ Deterministic/backend responsibilities include:
 - V6 values
 - deterministic commercial signals when rules are available
 
-AI responsibilities may include:
+Internal intelligence responsibilities may include:
 - executive summary
 - attention-point prioritization
 - explanation of patterns supported by the supplied data
@@ -180,8 +198,9 @@ AI must never:
 - execute recommended commercial actions without an explicit product workflow/user decision
 - claim causality when the evidence only supports correlation
 - expose raw secret keys client-side
+- expose provider/model configuration to client-company workspaces
 
-Persist AI briefs with the exact source snapshot/hash used to generate them so recommendations remain auditable.
+Persist internal intelligence briefs with the exact source snapshot/hash used to generate them so recommendations remain auditable to the VETRO team.
 
 ## Existing backend entities
 Core entities include `profiles`, `companies`, `company_memberships`, `company_member_permissions`, `company_settings`, `partners`, `partner_aliases`, `partner_units`, `brokers`, `broker_partner_memberships`, `developments`, `pipeline_stages`, `opportunities`, `activities`, `sales`, `imports`, `import_rows`, `v6_dimension_configs`, `v6_scores`, `partner_metrics_daily`, `audit_events`, `portfolios`, `portfolio_partner_assignments`, `commercial_goals`, `partner_relationship_snapshots`, `activity_brokers`.
@@ -191,6 +210,7 @@ Commercial intelligence entities include `inventory_units`, `inventory_unit_even
 Views / RPCs include `partner_performance`, `pipeline_overview`, `get_overview_metrics`, `get_my_company_permissions`, `set_member_permissions`, `platform_companies_overview`, `get_platform_overview_metrics`, `get_platform_recent_activity`, `get_commercial_cockpit`, `get_vgv_goal_progress`, and `get_commercial_action_center`.
 
 Edge Functions include `bootstrap-admin`, `invite-member`, and `commercial-brief`.
+`commercial-brief` is platform-internal and must require global `super_admin` in addition to JWT validation.
 
 Private import bucket: `vetro-imports`.
 
