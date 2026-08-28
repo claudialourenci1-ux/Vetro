@@ -12,8 +12,8 @@ type Settings = { ai_enabled?: boolean; ai_model?: string | null; signal_thresho
 export default async function IntelligenceSettingsPage() {
   const workspace = await requireCompanyPermission('settings_manage')
   const supabase = await createClient()
-  const { data, error } = await supabase.from('company_settings').select('ai_enabled,ai_model,signal_thresholds').eq('company_id', workspace.company.id).maybeSingle()
-  const settings = (data ?? {}) as Settings
+  const { data, error } = await supabase.from('company_settings').select('*').eq('company_id', workspace.company.id).maybeSingle()
+  const settings = (data ?? {}) as unknown as Settings
   const thresholds = (settings.signal_thresholds && typeof settings.signal_thresholds === 'object' ? settings.signal_thresholds : {}) as Thresholds
 
   return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}>
