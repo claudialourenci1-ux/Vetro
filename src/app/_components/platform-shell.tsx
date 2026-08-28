@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Gauge,
   LogOut,
+  Menu,
   Settings2,
   ShieldCheck,
   UsersRound,
@@ -29,6 +30,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '/'
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   async function signOut() {
@@ -40,7 +42,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`app-shell ${collapsed ? 'is-collapsed' : ''}`}>
-      <aside className="sidebar platform-sidebar">
+      <aside className={`sidebar platform-sidebar ${mobileOpen ? 'is-mobile-open' : ''}`}>
         <div className="sidebar-head">
           <Link className="brand" href="/platform" aria-label="VETRO Control Center">
             <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
@@ -49,6 +51,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
           <button className="icon-button collapse-button" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}>
             {collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
           </button>
+          <button className="icon-button mobile-nav-toggle" onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}><Menu size={17} /></button>
         </div>
 
         <div className="platform-context">
@@ -59,7 +62,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
         <nav className="nav" aria-label="Administração da plataforma">
           {platformItems.map(({ href, label, icon: Icon }) => {
             const active = href === '/platform' ? pathname === '/platform' : pathname.startsWith(href)
-            return <Link className={`nav-link ${active ? 'active' : ''}`} href={href} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>
+            return <Link className={`nav-link ${active ? 'active' : ''}`} href={href} onClick={() => setMobileOpen(false)} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>
           })}
         </nav>
 
