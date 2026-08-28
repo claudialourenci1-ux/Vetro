@@ -40,12 +40,15 @@ For company `admin`, `manager`, and `collaborator` users.
 Workspace navigation:
 1. Overview
 2. Parceiros
-3. Pipeline
-4. Empreendimentos
-5. Intelligence / V6
-6. Equipe
-7. Importar dados
-8. Admin
+3. Atividades
+4. Pipeline
+5. Empreendimentos
+6. Metas
+7. Equipe
+8. Intelligence / V6
+9. Plano de ação
+10. Importar dados
+11. Configuração de inteligência / Admin
 
 The Overview is the commercial cockpit, not a shallow KPI summary. It should progressively expose real data for VGV evolution, period comparison, goals, forecast, pipeline, stage aging, partner performance, development performance, inventory/absorption, concentration, V6, attention signals and recommended actions.
 
@@ -116,6 +119,9 @@ RPCs include:
 - `get_platform_overview_metrics()` is for the super-admin Control Center.
 - `get_platform_recent_activity(limit_rows)` is for the super-admin audit/activity experience.
 - `get_commercial_cockpit(...)` returns the authorized commercial cockpit payload for a company and period.
+- `get_vgv_goal_progress(...)` calculates progress against the active VGV goal independently from an arbitrary dashboard lookback.
+- `refresh_commercial_signals(...)` generates deterministic attention signals for the management team.
+- `get_commercial_action_center(...)`, `create_manual_commercial_action(...)`, `update_commercial_action(...)`, and `adopt_ai_brief_actions(...)` support tracked execution.
 
 Platform view:
 - `platform_companies_overview` provides company-level operational rollups to super admins under RLS.
@@ -169,14 +175,14 @@ Core entities include `profiles`, `companies`, `company_memberships`, `company_m
 
 Commercial intelligence entities include `inventory_units`, `inventory_unit_events`, `opportunity_stage_history`, `commercial_signals`, `forecast_snapshots`, `ai_briefs`, and `commercial_actions`.
 
-Views / RPCs include `partner_performance`, `pipeline_overview`, `get_overview_metrics`, `get_my_company_permissions`, `set_member_permissions`, `platform_companies_overview`, `get_platform_overview_metrics`, `get_platform_recent_activity`, and `get_commercial_cockpit`.
+Views / RPCs include `partner_performance`, `pipeline_overview`, `get_overview_metrics`, `get_my_company_permissions`, `set_member_permissions`, `platform_companies_overview`, `get_platform_overview_metrics`, `get_platform_recent_activity`, `get_commercial_cockpit`, `get_vgv_goal_progress`, and `get_commercial_action_center`.
 
 Edge Functions include `bootstrap-admin`, `invite-member`, and `commercial-brief`.
 
 Private import bucket: `vetro-imports`.
 
 ## UX direction
-Premium B2B enterprise technology product. Clean, compact, dense enough for commercial operations, highly legible, desktop-first but genuinely responsive.
+Premium B2B technology product. Clean, dense enough for operations, highly legible, desktop-first but responsive. Core palette: deep forest, dark green and soft neutral text. Do not use violet, purple, lilac or magenta in the interface. Preserve the VETRO wordmark direction and three-stripe E-inspired mark.
 
 Official product palette:
 - Deep background: `#051F20`
@@ -191,7 +197,6 @@ Official product palette:
 - Muted text: `#8FA59A`
 
 ZERO violet, purple, lilac or magenta in product UI, charts, focus states, shadows, gradients or decorative assets.
-Preserve the VETRO wordmark direction and three-stripe E-inspired mark while adapting it to the approved green identity.
 Prefer smaller typography, compact cards, subtle borders, restrained glow and high information density. Do not create generic AI-dashboard card soup.
 
 ## Working rules
