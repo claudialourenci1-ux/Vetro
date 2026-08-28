@@ -84,8 +84,8 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
   if (cockpitData && typeof cockpitData === 'object' && !Array.isArray(cockpitData) && goalResult.data && typeof goalResult.data === 'object' && !Array.isArray(goalResult.data)) {
     const source = cockpitData as DataRecord
     const progress = goalResult.data as DataRecord
+    const sourceForecast = source.forecast && typeof source.forecast === 'object' && !Array.isArray(source.forecast) ? source.forecast as DataRecord : {}
     if (progress.active === true) {
-      const sourceForecast = source.forecast && typeof source.forecast === 'object' && !Array.isArray(source.forecast) ? source.forecast as DataRecord : {}
       cockpitData = {
         ...source,
         goal: {
