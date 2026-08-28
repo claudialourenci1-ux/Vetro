@@ -9,6 +9,7 @@ import {
   CircleUserRound,
   FileUp,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   Network,
   Settings2,
@@ -28,6 +29,7 @@ const items = [
   { href: '/empreendimentos', label: 'Empreendimentos', icon: Building2, permission: 'developments_view' },
   { href: '/equipe', label: 'Equipe', icon: CircleUserRound, permission: 'team_view' },
   { href: '/intelligence', label: 'Intelligence', icon: Sparkles, permission: 'intelligence_view' },
+  { href: '/acoes', label: 'Plano de ação', icon: ListChecks, permission: 'intelligence_view' },
   { href: '/importar-dados', label: 'Importar dados', icon: FileUp, permission: 'imports_execute' },
   { href: '/admin', label: 'Admin', icon: Settings2, permission: 'admin_view' },
 ]
