@@ -40,3 +40,49 @@ export async function adoptBriefActionsAction(formData: FormData) {
   revalidatePath('/')
   revalidatePath('/acoes')
 }
+
+export async function createManualActionAction(formData: FormData) {
+  const workspace = await requireCompanyPermission('intelligence_view')
+  const title = String(formData.get('title') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  const priority = String(formData.get('priority') ?? 'medium')
+  const assigned = String(formData.get('assigned_to') ?? '')
+  const due = String(formData.get('due_at') ?? '')
+  if (!title) throw new Error('Informe o título da ação.')
+  const rpc = await rpcClient()
+  const result = await rpc.rpc('create_manual_commercial_action', {
+    target_company_id: workspace.company.id,
+    action_title: title,
+    action_description: description || null,
+    action_priority: priority,
+    action_assigned_to: uuid.test(assigned) ? assigned : null,
+    action_due_at: due ? new Date(due).toISOString() : null,
+  })
+  if (result.error) throw new Error(`Falha ao criar ação: ${result.error.message}`)
+  revalidatePath('/')
+  revalidatePath('/acoes')
+}
+
+export async function updateCommercialActionAction(formData: FormData) {
+  const workspace = await requireCompanyPermission('intelligence_view')
+  const actionId = String(formData.get('action_id') ?? '')
+  const status = String(formData.get('status') ?? '')
+  const assignedRaw = String(formData.get('assigned_to') ?? '')
+  const dueRaw = String(formData.get('due_at') ?? '')
+  const setAssignee = formData.has('set_assignee')
+  const setDue = formData.has('set_due')
+  if (!uuid.test(actionId)) throw new Error('Ação inválida.')
+  const rpc = await rpcClient()
+  const result = await rpc.rpc('update_commercial_action', {
+    target_company_id: workspace.company.id,
+    target_action_id: actionId,
+    new_status: status || null,
+    new_assigned_to: setAssignee && uuid.test(assignedRaw) ? assignedRaw : null,
+    set_assignee: setAssignee,
+    new_due_at: setDue && dueRaw ? new Date(dueRaw).toISOString() : null,
+    set_due_at: setDue,
+  })
+  if (result.error) throw new Error(`Falha ao atualizar ação: ${result.error.message}`)
+  revalidatePath('/')
+  revalidatePath('/acoes')
+}
