@@ -8,6 +8,8 @@ import styles from './page.module.css'
 
 type Row = Record<string, unknown>
 type SearchParams = { q?: string | string[]; development?: string | string[]; partner?: string | string[]; stale?: string | string[] }
+type RpcResult = { data: unknown; error: { message: string } | null }
+type RpcClient = { rpc: (name: string, args: Record<string, unknown>) => Promise<RpcResult> }
 
 const number = new Intl.NumberFormat('pt-BR')
 const decimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 })
@@ -18,7 +20,8 @@ const dateTime = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value }
 function amount(value: unknown) { const result = Number(value ?? 0); return Number.isFinite(result) ? result : 0 }
 function label(value: unknown, fallback = '') { return value === null || value === undefined ? fallback : String(value) }
-function relationValue(row: Row | undefined, key: string) { return row ? label(row[key]) : '' }
+function asRecord(value: unknown): Row { return value && typeof value === 'object' && !Array.isArray(value) ? value as Row : {} }
+function asRows(value: unknown): Row[] { return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object' && !Array.isArray(item)) as Row[] : [] }
 function bestValue(row: Row) { return amount(row.contract_value ?? row.proposal_value ?? row.estimated_value ?? row.table_value) }
 function daysBetween(value: unknown) {
   if (!value) return 0
@@ -30,77 +33,48 @@ function daysBetween(value: unknown) {
 export default async function PipelinePage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const workspace = await requireCompanyPermission('pipeline_view')
   const supabase = await createClient()
+  const rpc = supabase as unknown as RpcClient
   const requested = await searchParams ?? {}
   const query = (first(requested.q) ?? '').trim().toLocaleLowerCase('pt-BR')
   const developmentFilter = first(requested.development) ?? ''
   const partnerFilter = first(requested.partner) ?? ''
   const staleOnly = first(requested.stale) === '1'
 
-  const [stagesResult, opportunitiesResult, partnersResult, developmentsResult, portfoliosResult, brokersResult, profilesResult, historyResult, settingsResult] = await Promise.all([
-    supabase.from('pipeline_stages').select('id,key,name,position,stage_type,is_active').eq('company_id', workspace.company.id).eq('is_active', true).order('position'),
-    supabase.from('opportunities').select('id,stage_id,stage,partner_id,development_id,portfolio_id,broker_id,assigned_to,contact_name,unit_code,farol,contract_value,proposal_value,estimated_value,table_value,source_date,created_at,updated_at,closed_at,lost_reason,motivation').eq('company_id', workspace.company.id).order('updated_at', { ascending: false }),
-    supabase.from('partners').select('id,name').eq('company_id', workspace.company.id).order('name'),
-    supabase.from('developments').select('id,name,status').eq('company_id', workspace.company.id).order('name'),
-    supabase.from('portfolios').select('id,name,manager_name').eq('company_id', workspace.company.id).order('name'),
-    supabase.from('brokers').select('id,full_name').eq('company_id', workspace.company.id),
-    supabase.from('profiles').select('id,full_name'),
-    supabase.from('opportunity_stage_history').select('opportunity_id,entered_at').eq('company_id', workspace.company.id).is('exited_at', null),
-    supabase.from('company_settings').select('signal_thresholds').eq('company_id', workspace.company.id).maybeSingle(),
-  ])
-
-  const error = stagesResult.error ?? opportunitiesResult.error ?? partnersResult.error ?? developmentsResult.error ?? portfoliosResult.error ?? brokersResult.error ?? profilesResult.error ?? historyResult.error ?? settingsResult.error
+  const { data, error } = await rpc.rpc('get_pipeline_command_center', { target_company_id: workspace.company.id })
   if (error) return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}><section className="workspace-error"><strong>Não foi possível carregar o Pipeline.</strong><span>{error.message}</span></section></AppShell>
 
-  const stages = (stagesResult.data ?? []) as Row[]
-  const opportunities = (opportunitiesResult.data ?? []) as Row[]
-  const partners = (partnersResult.data ?? []) as Row[]
-  const developments = (developmentsResult.data ?? []) as Row[]
-  const portfolios = (portfoliosResult.data ?? []) as Row[]
-  const brokers = (brokersResult.data ?? []) as Row[]
-  const profiles = (profilesResult.data ?? []) as Row[]
-  const history = (historyResult.data ?? []) as Row[]
-  const settings = settingsResult.data && typeof settingsResult.data === 'object' ? settingsResult.data as Row : {}
-  const thresholds = settings.signal_thresholds && typeof settings.signal_thresholds === 'object' && !Array.isArray(settings.signal_thresholds) ? settings.signal_thresholds as Row : {}
-  const staleDays = Math.max(1, amount(thresholds.stale_opportunity_days) || 7)
+  const payload = asRecord(data)
+  const stages = asRows(payload.stages)
+  const opportunities = asRows(payload.opportunities)
+  const partners = asRows(payload.partners)
+  const developments = asRows(payload.developments)
+  const staleDays = Math.max(1, amount(payload.stale_days) || 7)
 
-  const stageById = new Map(stages.map((row) => [label(row.id), row]))
-  const partnerById = new Map(partners.map((row) => [label(row.id), label(row.name)]))
-  const developmentById = new Map(developments.map((row) => [label(row.id), label(row.name)]))
-  const portfolioById = new Map(portfolios.map((row) => [label(row.id), row]))
-  const brokerById = new Map(brokers.map((row) => [label(row.id), label(row.full_name)]))
-  const profileById = new Map(profiles.map((row) => [label(row.id), label(row.full_name)]))
-  const enteredAtByOpportunity = new Map(history.map((row) => [label(row.opportunity_id), row.entered_at]))
-
-  const mapped = opportunities.map((row) => {
-    const portfolio = portfolioById.get(label(row.portfolio_id))
-    const enteredAt = enteredAtByOpportunity.get(label(row.id)) ?? row.updated_at ?? row.created_at
-    const stage = stageById.get(label(row.stage_id))
-    return {
-      id: label(row.id),
-      stageId: row.stage_id ? label(row.stage_id) : null,
-      stageKey: label(stage?.key ?? row.stage),
-      stageType: label(stage?.stage_type, 'open'),
-      unitCode: label(row.unit_code),
-      contactName: label(row.contact_name),
-      partnerId: label(row.partner_id),
-      partnerName: partnerById.get(label(row.partner_id)) ?? '',
-      developmentId: label(row.development_id),
-      developmentName: developmentById.get(label(row.development_id)) ?? '',
-      portfolioName: relationValue(portfolio, 'name'),
-      managerName: relationValue(portfolio, 'manager_name'),
-      brokerName: brokerById.get(label(row.broker_id)) ?? '',
-      ownerName: profileById.get(label(row.assigned_to)) ?? '',
-      value: bestValue(row),
-      tableValue: amount(row.table_value),
-      proposalValue: amount(row.proposal_value),
-      daysInStage: daysBetween(enteredAt),
-      sourceDate: row.source_date ? label(row.source_date) : null,
-      farol: label(row.farol),
-      motivation: label(row.motivation ?? row.lost_reason),
-      closedAt: row.closed_at ? label(row.closed_at) : null,
-      lostReason: label(row.lost_reason),
-    }
-  })
+  const mapped = opportunities.map((row) => ({
+    id: label(row.id),
+    stageId: row.stage_id ? label(row.stage_id) : null,
+    stageKey: label(row.stage),
+    stageType: label(row.stage_type, 'open'),
+    unitCode: label(row.unit_code),
+    contactName: label(row.contact_name),
+    partnerId: label(row.partner_id),
+    partnerName: label(row.partner_name),
+    developmentId: label(row.development_id),
+    developmentName: label(row.development_name),
+    portfolioName: label(row.portfolio_name),
+    managerName: label(row.manager_name),
+    brokerName: label(row.broker_name),
+    ownerName: label(row.owner_name),
+    value: bestValue(row),
+    tableValue: amount(row.table_value),
+    proposalValue: amount(row.proposal_value),
+    daysInStage: daysBetween(row.stage_entered_at),
+    sourceDate: row.source_date ? label(row.source_date) : null,
+    farol: label(row.farol),
+    motivation: label(row.motivation ?? row.lost_reason),
+    closedAt: row.closed_at ? label(row.closed_at) : null,
+    lostReason: label(row.lost_reason),
+  }))
 
   const filtered = mapped.filter((row) => {
     if (developmentFilter && row.developmentId !== developmentFilter) return false
@@ -121,7 +95,26 @@ export default async function PipelinePage({ searchParams }: { searchParams?: Pr
   const closeRate = won.length + lost.length ? (won.length / (won.length + lost.length)) * 100 : 0
 
   const openStages = stages.filter((row) => label(row.stage_type) === 'open').map((row) => ({ id: label(row.id), key: label(row.key), name: label(row.name), position: amount(row.position), stageType: label(row.stage_type) }))
-  const boardRows: PipelineOpportunity[] = open.map(({ stageType: _stageType, partnerId: _partnerId, developmentId: _developmentId, closedAt: _closedAt, lostReason: _lostReason, ...row }) => row)
+  const boardRows: PipelineOpportunity[] = open.map((row) => ({
+    id: row.id,
+    stageId: row.stageId,
+    stageKey: row.stageKey,
+    unitCode: row.unitCode,
+    contactName: row.contactName,
+    partnerName: row.partnerName,
+    developmentName: row.developmentName,
+    portfolioName: row.portfolioName,
+    managerName: row.managerName,
+    brokerName: row.brokerName,
+    ownerName: row.ownerName,
+    value: row.value,
+    tableValue: row.tableValue,
+    proposalValue: row.proposalValue,
+    daysInStage: row.daysInStage,
+    sourceDate: row.sourceDate,
+    farol: row.farol,
+    motivation: row.motivation,
+  }))
 
   const stageStats = openStages.map((stage) => {
     const rows = open.filter((row) => row.stageId === stage.id)
