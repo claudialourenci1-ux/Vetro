@@ -1,71 +1,36 @@
-import { Building2, Goal, Landmark, Target } from 'lucide-react'
+import { CircleGauge, Goal, Landmark, Target } from 'lucide-react'
 import { AppShell, PageHeading } from '../_components/app-shell'
 import { createClient } from '@/lib/supabase/server'
 import { requireCompanyPermission } from '@/lib/workspace/server'
-import { saveVgvGoalAction } from './actions'
+import { saveCommercialGoalAction } from './actions'
 import styles from './page.module.css'
 
-type DataRecord = Record<string, unknown>
-const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
-const date = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
+type Row=Record<string,unknown>
+type RpcClient={rpc:(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:{message:string}|null}>}
+const integer=new Intl.NumberFormat('pt-BR'),decimal=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1}),money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}),compactMoney=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',notation:'compact',maximumFractionDigits:1})
+const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+const text=(v:unknown,f='')=>v===null||v===undefined?f:String(v),amount=(v:unknown)=>{const n=Number(v??0);return Number.isFinite(n)?n:0}
+const asRecord=(v:unknown):Row=>v&&typeof v==='object'&&!Array.isArray(v)?v as Row:{},asRows=(v:unknown):Row[]=>Array.isArray(v)?v.filter((x)=>x&&typeof x==='object'&&!Array.isArray(x)) as Row[]:[]
+const iso=(d:Date)=>d.toISOString().slice(0,10)
 
-function iso(value: Date) { return value.toISOString().slice(0, 10) }
-function text(value: unknown, fallback = '—') { return value == null || value === '' ? fallback : String(value) }
-function amount(value: unknown) { const parsed = Number(value ?? 0); return Number.isFinite(parsed) ? parsed : 0 }
-
-export default async function GoalsPage() {
-  const workspace = await requireCompanyPermission('overview_view')
-  const supabase = await createClient()
-  const [goalsResult, developmentsResult, portfoliosResult] = await Promise.all([
-    supabase.from('commercial_goals').select('*').eq('company_id', workspace.company.id).eq('indicator_key', 'vgv').order('period_start', { ascending: false }),
-    supabase.from('developments').select('id,name').eq('company_id', workspace.company.id).eq('status', 'active').order('name'),
-    supabase.from('portfolios').select('id,name,manager_name').eq('company_id', workspace.company.id).eq('is_active', true).order('name'),
-  ])
-  const error = goalsResult.error ?? developmentsResult.error ?? portfoliosResult.error
-  const goals = (goalsResult.data ?? []) as DataRecord[]
-  const developments = (developmentsResult.data ?? []) as DataRecord[]
-  const portfolios = (portfoliosResult.data ?? []) as DataRecord[]
-  const developmentNames = new Map(developments.map((row) => [String(row.id), text(row.name)]))
-  const portfolioNames = new Map(portfolios.map((row) => [String(row.id), text(row.name)]))
-  const canManage = workspace.membership.role === 'admin' || workspace.membership.role === 'manager'
-  const companyGoals = goals.filter((row) => !row.development_id && !row.portfolio_id)
-  const developmentGoals = goals.filter((row) => row.development_id)
-  const portfolioGoals = goals.filter((row) => row.portfolio_id)
-  const now = new Date()
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-  const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0))
-  const current = companyGoals.find((row) => String(row.period_start) <= iso(now) && String(row.period_end) >= iso(now))
-
+export default async function GoalsPage(){
+  const workspace=await requireCompanyPermission('overview_view'),supabase=await createClient(),rpc=supabase as unknown as RpcClient
+  const now=new Date(),today=iso(now),year=now.getUTCFullYear()
+  const {data,error}=await rpc.rpc('get_goals_command_center',{target_company_id:workspace.company.id,as_of_date:today})
+  if(error)return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}><section className="workspace-error"><strong>Não foi possível carregar as metas.</strong><span>{error.message}</span></section></AppShell>
+  const payload=asRecord(data),summary=asRecord(payload.summary),progress=asRecord(payload.vgv_progress),catalog=asRows(payload.catalog),indicatorSummary=asRows(payload.indicator_summary),goals=asRows(payload.goals),developments=asRows(payload.developments),portfolios=asRows(payload.portfolios)
+  const canManage=['admin','manager'].includes(workspace.membership.role)
+  const catalogWithSummary=catalog.map((item)=>({...item,summary:indicatorSummary.find((row)=>text(row.indicator_key)===text(item.key))})) as Array<Row&{summary?:Row}>
+  const companyYearGoals=goals.filter((g)=>text(g.scope_type)==='company'&&new Date(`${text(g.period_start)}T12:00:00Z`).getUTCFullYear()===year)
+  const monthMap=new Map<string,Row>();for(const g of companyYearGoals){const m=new Date(`${text(g.period_start)}T12:00:00Z`).getUTCMonth();monthMap.set(`${text(g.indicator_key)}:${m}`,g)}
+  const monthStart=new Date(Date.UTC(year,now.getUTCMonth(),1)),monthEnd=new Date(Date.UTC(year,now.getUTCMonth()+1,0))
+  const target=amount(progress.target),realized=amount(progress.realized),attainment=amount(progress.attainment_pct),gap=amount(progress.gap)
   return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}>
-    <PageHeading eyebrow="Planejamento comercial" title="Metas" />
-    {error ? <section className="workspace-error"><strong>Não foi possível carregar as metas.</strong><span>{error.message}</span></section> : <>
-      <section className={styles.summary}>
-        <article><Target size={17}/><span>Meta corporativa vigente</span><strong>{current ? money.format(amount(current.target_value)) : 'Não definida'}</strong></article>
-        <article><Building2 size={17}/><span>Metas por empreendimento</span><strong>{developmentGoals.length}</strong></article>
-        <article><Landmark size={17}/><span>Metas por carteira</span><strong>{portfolioGoals.length}</strong></article>
-        <article><Goal size={17}/><span>Períodos cadastrados</span><strong>{goals.length}</strong></article>
-      </section>
-
-      {canManage ? <section className={styles.panel}>
-        <header><div><span>NOVA META</span><h2>Definir VGV esperado</h2></div><Target size={18}/></header>
-        <form action={saveVgvGoalAction} className={styles.form}>
-          <label><span>Escopo</span><select defaultValue="company" name="scope"><option value="company">Empresa inteira</option><optgroup label="Empreendimentos">{developments.map((item) => <option key={String(item.id)} value={`development:${String(item.id)}`}>{text(item.name)}</option>)}</optgroup><optgroup label="Carteiras comerciais">{portfolios.map((item) => <option key={String(item.id)} value={`portfolio:${String(item.id)}`}>{text(item.name)}</option>)}</optgroup></select></label>
-          <label><span>Início</span><input defaultValue={iso(monthStart)} name="period_start" type="date" required /></label>
-          <label><span>Fim</span><input defaultValue={iso(monthEnd)} name="period_end" type="date" required /></label>
-          <label><span>Meta de VGV (R$)</span><input min="0" name="target_value" placeholder="30000000" step="0.01" type="number" required /></label>
-          <button type="submit">Salvar meta</button>
-        </form>
-        <p className={styles.helper}>Se já existir uma meta para o mesmo escopo e início de período, a VETRO atualiza o valor em vez de duplicar o registro.</p>
-      </section> : null}
-
-      <section className={styles.panel}>
-        <header><div><span>HISTÓRICO</span><h2>Metas comerciais cadastradas</h2></div><span className={styles.counter}>{goals.length}</span></header>
-        <div className={styles.tableWrap}><table><thead><tr><th>Escopo</th><th>Período</th><th>Meta</th><th>Nível</th></tr></thead><tbody>{goals.length ? goals.map((goal) => {
-          const scopeName = goal.development_id ? developmentNames.get(String(goal.development_id)) ?? 'Empreendimento' : goal.portfolio_id ? portfolioNames.get(String(goal.portfolio_id)) ?? 'Carteira' : workspace.company.name
-          const level = goal.development_id ? 'Empreendimento' : goal.portfolio_id ? 'Carteira' : 'Corporativa'
-          return <tr key={String(goal.id)}><td><b>{scopeName}</b><small>{text(goal.indicator_name, 'VGV')}</small></td><td>{date.format(new Date(`${String(goal.period_start)}T12:00:00`))} → {date.format(new Date(`${String(goal.period_end)}T12:00:00`))}</td><td><strong>{money.format(amount(goal.target_value))}</strong></td><td><span className={styles.level}>{level}</span></td></tr>
-        }) : <tr><td className={styles.empty} colSpan={4}>Nenhuma meta de VGV cadastrada ainda.</td></tr>}</tbody></table></div>
-      </section>
-    </>}
+    <PageHeading eyebrow="Metas" title="Planejamento comercial" context="Indicadores operacionais, VGV e escopos comerciais sem planilhas paralelas"/>
+    <section className={styles.metrics}><article><span>Indicadores</span><strong>{integer.format(catalog.length)}</strong><small>7 operacionais + VGV</small><Target size={17}/></article><article><span>Metas definidas</span><strong>{integer.format(amount(summary.defined))}</strong><small>{integer.format(amount(summary.drafts))} períodos ainda zerados</small><Goal size={17}/></article><article><span>VGV vigente</span><strong>{target>0?compactMoney.format(target):'—'}</strong><small>{target>0?`${decimal.format(attainment)}% realizado`:'não definido'}</small><Landmark size={17}/></article><article><span>Gap VGV</span><strong>{target>0?compactMoney.format(Math.max(gap,0)):'—'}</strong><small>{target>0?`${compactMoney.format(realized)} realizado`:'aguardando meta'}</small><CircleGauge size={17}/></article></section>
+    <section className={styles.catalog}><header><div><span>COBERTURA</span><h2>O que já tem meta definida</h2></div><small>zero significa “não definida” no piloto atual</small></header><div>{catalogWithSummary.map((item)=>{const s=asRecord(item.summary);const periods=amount(s.periods),defined=amount(s.defined);return <article key={text(item.key)}><div><b>{text(item.label)}</b><span>{text(item.key)}</span></div><strong>{integer.format(defined)}/{integer.format(periods||0)}</strong><i><em style={{width:`${periods?defined/periods*100:0}%`}}/></i></article>})}</div></section>
+    {canManage?<section className={styles.panel}><header><div><span>DEFINIR / ATUALIZAR</span><h2>Meta comercial</h2></div><Target size={17}/></header><form action={saveCommercialGoalAction} className={styles.form}><label><span>Indicador</span><select name="indicator_key" defaultValue="vgv">{catalog.map((item)=><option key={text(item.key)} value={text(item.key)}>{text(item.label)}</option>)}</select></label><label><span>Escopo</span><select name="scope" defaultValue="company"><option value="company">Empresa inteira</option><optgroup label="Empreendimentos">{developments.map((d)=><option key={text(d.id)} value={`development:${text(d.id)}`}>{text(d.name)}</option>)}</optgroup><optgroup label="Carteiras">{portfolios.map((p)=><option key={text(p.id)} value={`portfolio:${text(p.id)}`}>{text(p.name)}</option>)}</optgroup></select></label><label><span>Início</span><input name="period_start" type="date" defaultValue={iso(monthStart)} required/></label><label><span>Fim</span><input name="period_end" type="date" defaultValue={iso(monthEnd)} required/></label><label><span>Valor da meta</span><input name="target_value" type="number" min="0" step="0.01" placeholder="0" required/></label><button type="submit">Salvar meta</button></form><p className={styles.help}>Use R$ para VGV e quantidade para os demais indicadores. Salvar no mesmo indicador, escopo e início atualiza o registro existente.</p></section>:null}
+    <section className={styles.panel}><header><div><span>MATRIZ {year}</span><h2>Metas corporativas mensais</h2></div><small>rolagem horizontal disponível</small></header><div className={styles.matrixWrap}><table><thead><tr><th>Indicador</th>{months.map(m=><th key={m}>{m}</th>)}</tr></thead><tbody>{catalog.map((item)=><tr key={text(item.key)}><td><b>{text(item.label)}</b></td>{months.map((m,index)=>{const g=monthMap.get(`${text(item.key)}:${index}`),v=amount(g?.target_value);return <td key={m} className={v>0?styles.defined:''} title={v>0?(text(item.key)==='vgv'?money.format(v):integer.format(v)):'Não definida'}>{v>0?(text(item.key)==='vgv'?compactMoney.format(v):integer.format(v)):'—'}</td>})}</tr>)}</tbody></table></div></section>
+    <section className={styles.panel}><header><div><span>HISTÓRICO</span><h2>Todos os escopos cadastrados</h2></div><small>{goals.length} registros</small></header><div className={styles.history}>{goals.slice(0,120).map(g=><article key={text(g.id)}><div><b>{text(g.indicator_name)}</b><span>{text(g.scope_name)} · {text(g.scope_type)}</span></div><span>{text(g.period_start)} → {text(g.period_end)}</span><strong>{amount(g.target_value)>0?(text(g.indicator_key)==='vgv'?money.format(amount(g.target_value)):integer.format(amount(g.target_value))):'Não definida'}</strong></article>)}</div></section>
   </AppShell>
 }
