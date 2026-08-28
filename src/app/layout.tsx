@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import './workspace.css'
+import './cockpit.css'
 
 export const metadata: Metadata = {
   title: 'VETRO',
