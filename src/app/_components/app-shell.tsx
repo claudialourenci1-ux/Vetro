@@ -14,7 +14,6 @@ import {
   Menu,
   Network,
   Settings2,
-  SlidersHorizontal,
   Sparkles,
   Target,
   UsersRound,
@@ -35,7 +34,6 @@ const items = [
   { href: '/intelligence', label: 'Intelligence', icon: Sparkles, permission: 'intelligence_view' },
   { href: '/acoes', label: 'Plano de ação', icon: ListChecks, permission: 'intelligence_view' },
   { href: '/importar-dados', label: 'Importar dados', icon: FileUp, permission: 'imports_execute' },
-  { href: '/admin/intelligence', label: 'Config. inteligência', icon: SlidersHorizontal, permission: 'settings_manage' },
   { href: '/admin', label: 'Admin', icon: Settings2, permission: 'admin_view' },
 ]
 
