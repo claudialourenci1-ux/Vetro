@@ -10,6 +10,7 @@ import {
   FileUp,
   LayoutDashboard,
   LogOut,
+  Menu,
   Network,
   Settings2,
   Sparkles,
@@ -46,6 +47,7 @@ export function AppShell({
   const pathname = usePathname() ?? '/'
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   const canSee = (permission: string) => {
@@ -63,7 +65,7 @@ export function AppShell({
 
   return (
     <div className={`app-shell ${collapsed ? 'is-collapsed' : ''}`}>
-      <aside className="sidebar">
+      <aside className={`sidebar ${mobileOpen ? 'is-mobile-open' : ''}`}>
         <div className="sidebar-head">
           <Link className="brand" href="/" aria-label="VETRO overview">
             <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
@@ -72,12 +74,13 @@ export function AppShell({
           <button className="icon-button collapse-button" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}>
             {collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
           </button>
+          <button className="icon-button mobile-nav-toggle" onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}><Menu size={17} /></button>
         </div>
 
         <nav className="nav" aria-label="Navegação principal">
           {items.filter((item) => canSee(item.permission)).map(({ href, label, icon: Icon }) => {
             const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
-            return <Link className={`nav-link ${active ? 'active' : ''}`} href={href} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>
+            return <Link className={`nav-link ${active ? 'active' : ''}`} href={href} onClick={() => setMobileOpen(false)} key={href} title={collapsed ? label : undefined}><Icon size={18} /><span>{label}</span></Link>
           })}
         </nav>
 
@@ -94,8 +97,8 @@ export function AppShell({
   )
 }
 
-export function PageHeading({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
-  return <header className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1></div>{children}</header>
+export function PageHeading({ eyebrow, title, context, children }: { eyebrow: string; title: string; context?: string; children?: React.ReactNode }) {
+  return <header className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1>{context ? <p className="page-context">{context}</p> : null}</div>{children}</header>
 }
 
 export function MetricIcon({ children }: { children: React.ReactNode }) {

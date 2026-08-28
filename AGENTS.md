@@ -137,7 +137,7 @@ Edge Functions include `bootstrap-admin` and `invite-member`.
 Private import bucket: `vetro-imports`.
 
 ## UX direction
-Premium B2B technology product. Clean, dense enough for operations, highly legible, desktop-first but responsive. Core palette: violet/purple, graphite/black, white. Preserve the VETRO wordmark direction and three-stripe E-inspired mark.
+Premium B2B technology product. Clean, dense enough for operations, highly legible, desktop-first but responsive. Core palette: deep forest, dark green and soft neutral text. Do not use violet, purple, lilac or magenta in the interface. Preserve the VETRO wordmark direction and three-stripe E-inspired mark.
 
 ## Working rules
 - Inspect existing code before changing it.

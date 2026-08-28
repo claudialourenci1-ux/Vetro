@@ -1,18 +1,22 @@
 import Link from 'next/link'
-import { getCurrentProfile, requireAuthenticatedUser } from '@/lib/auth/server'
+import { getCurrentProfile, getCurrentUser } from '@/lib/auth/server'
 import { getCompanyWorkspace } from '@/lib/workspace/server'
 import { AppShell, PageHeading } from './_components/app-shell'
+import { LandingPage } from './_components/landing-page'
 import { PlatformShell } from './_components/platform-shell'
 import { OnboardingCard } from './_components/onboarding-card'
 
 type DataRecord = Record<string, unknown>
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 const number = (value: unknown) => new Intl.NumberFormat('pt-BR').format(Number(value ?? 0))
+const compactNumber = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
+const compactCurrency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 })
 const value = (row: DataRecord | null, keys: string[]) => keys.map((key) => row?.[key]).find((item) => item !== undefined && item !== null)
 const dateTime = (value: unknown) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(String(value))) : 'Sem atividade'
 
 export default async function HomePage() {
-  const { supabase, user } = await requireAuthenticatedUser()
+  const { supabase, user } = await getCurrentUser()
+  if (!user) return <LandingPage />
   const profile = await getCurrentProfile(user.id)
 
   if (profile?.global_role === 'super_admin') {
@@ -31,7 +35,7 @@ export default async function HomePage() {
       ['Gestores', number(value(metrics, ['managers']))],
       ['Empreendimentos', number(value(metrics, ['developments']))],
       ['Parceiros', number(value(metrics, ['partners']))],
-      ['VGV acompanhado', brl.format(Number(value(metrics, ['gross_sales_value']) ?? 0))],
+      ['VGV acompanhado', compactCurrency.format(Number(value(metrics, ['gross_sales_value']) ?? 0))],
     ]
 
     return (
@@ -47,7 +51,12 @@ export default async function HomePage() {
         <section className="overview-grid platform-overview-grid">
           <article className="data-panel">
             <div className="panel-heading"><div><p className="eyebrow">Empresas</p><h2>Operações na plataforma</h2></div><Link href="/platform/empresas">Ver todas</Link></div>
-            {companies.length ? <div className="company-list">{companies.map((company) => <div className="company-row" key={String(company.id)}><div><b>{String(company.name ?? 'Empresa')}</b><span>{String(company.contract_status ?? 'active')} · {number(company.users_count)} usuários · {number(company.developments_count)} empreendimentos</span></div><div className="company-row-right"><b>{brl.format(Number(company.gross_sales_value ?? 0))}</b><span>{dateTime(company.last_activity_at)}</span></div></div>)}</div> : <div className="platform-empty"><p>Nenhuma incorporadora foi ativada ainda.</p><Link className="primary action-link" href="/platform/empresas">Cadastrar primeira empresa</Link></div>}
+            {companies.length ? <div className="company-list">{companies.map((company) => (
+              <div className="company-row" key={String(company.id)}>
+                <div><b>{String(company.name ?? 'Empresa')}</b><span>{String(company.contract_status ?? 'active')} · {number(company.users_count)} usuários · {number(company.developments_count)} empreendimentos</span></div>
+                <div className="company-row-right"><b title={brl.format(Number(company.gross_sales_value ?? 0))}>{compactCurrency.format(Number(company.gross_sales_value ?? 0))}</b><span>{dateTime(company.last_activity_at)}</span></div>
+              </div>
+            ))}</div> : <div className="platform-empty"><p>Nenhuma incorporadora foi ativada ainda.</p><Link className="primary action-link" href="/platform/empresas">Cadastrar primeira empresa</Link></div>}
           </article>
           <article className="data-panel">
             <div className="panel-heading"><div><p className="eyebrow">Atividade</p><h2>Últimos movimentos</h2></div><Link href="/platform/atividade">Abrir histórico</Link></div>
@@ -74,19 +83,21 @@ export default async function HomePage() {
   const ranking = (rankingResult.data ?? []) as DataRecord[]
   const pipeline = (pipelineResult.data ?? []) as DataRecord[]
   const cards = [
-    ['Parceiros ativos', number(value(metrics, ['partners', 'active_partners']))],
-    ['Corretores ativos', number(value(metrics, ['active_brokers', 'brokers']))],
-    ['Oportunidades', number(value(metrics, ['opportunities', 'total_opportunities']))],
-    ['Vendas', number(value(metrics, ['sales', 'total_sales']))],
-    ['VGV', brl.format(Number(value(metrics, ['gross_sales_value', 'vgv', 'sales_value']) ?? 0))],
+    ['Parceiros ativos', compactNumber.format(Number(value(metrics, ['partners', 'active_partners']) ?? 0))],
+    ['Corretores ativos', compactNumber.format(Number(value(metrics, ['active_brokers', 'brokers']) ?? 0))],
+    ['Oportunidades', compactNumber.format(Number(value(metrics, ['opportunities', 'total_opportunities']) ?? 0))],
+    ['Vendas', compactNumber.format(Number(value(metrics, ['sales', 'total_sales']) ?? 0))],
+    ['VGV', compactCurrency.format(Number(value(metrics, ['gross_sales_value', 'vgv', 'sales_value']) ?? 0))],
     ['Conversão', `${Number(value(metrics, ['conversion_rate', 'conversion']) ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`],
   ]
 
   return (
     <AppShell companyName={workspace?.company.name} role={workspace?.membership.role} permissions={workspace?.permissions}>
-      <PageHeading eyebrow="Overview" title={workspace?.company.name ?? 'Sua operação comercial'} />
+      <PageHeading eyebrow="Overview" title={workspace?.company.name ?? 'Sua operação comercial'} context="Operação comercial · período atual" />
       {!workspace ? <OnboardingCard /> : <>
-        <section className="metric-grid">{cards.map(([label, cardValue]) => <article className="metric-card" key={String(label)}><div className="metric-label">{label}</div><div className="metric">{cardValue}</div></article>)}</section>
+        <section className="metric-grid">
+          {cards.map(([label, cardValue]) => <article className="metric-card" key={String(label)}><div className="metric-label">{label}</div><div className="metric">{cardValue}</div></article>)}
+        </section>
         <section className="overview-grid">
           <article className="data-panel"><div className="panel-heading"><div><p className="eyebrow">Parceiros</p><h2>Ranking de performance</h2></div><span>Top 5</span></div>{ranking.length ? <ol className="ranking-list">{ranking.map((partner, index) => <li key={String(value(partner, ['partner_id', 'id', 'partner_name']))}><b>{String(value(partner, ['partner_name', 'name']) ?? 'Parceiro')}</b><span>#{index + 1} · {brl.format(Number(value(partner, ['gross_sales_value', 'sales_value', 'vgv']) ?? 0))}</span></li>)}</ol> : <p className="panel-empty">Ainda não há performance de parceiros para este período.</p>}</article>
           <article className="data-panel"><div className="panel-heading"><div><p className="eyebrow">Pipeline</p><h2>Visão por etapa</h2></div><span>{pipeline.length} etapas</span></div>{pipeline.length ? <div className="pipeline-list">{pipeline.map((stage) => <div className="pipeline-row" key={String(value(stage, ['stage_id', 'id', 'stage_name']))}><span>{String(value(stage, ['stage_name', 'name']) ?? 'Etapa')}</span><b>{number(value(stage, ['opportunities', 'opportunity_count', 'count']))}</b></div>)}</div> : <p className="panel-empty">O pipeline aparecerá aqui quando as oportunidades entrarem na operação.</p>}</article>

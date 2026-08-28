@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import './platform.css'
 import './workspace.css'
 
 export const metadata: Metadata = {
