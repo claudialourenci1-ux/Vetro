@@ -1,7 +1,6 @@
 import { Activity, ArrowUpRight, BrainCircuit, CircleGauge, DatabaseZap, FlaskConical, Network, Radar, RefreshCw, ShieldCheck, Sparkles, Target } from 'lucide-react'
 import Link from 'next/link'
 import { AppShell, PageHeading } from '../_components/app-shell'
-import { AiBriefButton } from '../_components/ai-brief-button'
 import { refreshSignalsAction } from '../acoes/actions'
 import { createClient } from '@/lib/supabase/server'
 import { requireCompanyPermission } from '@/lib/workspace/server'
@@ -59,9 +58,7 @@ export default async function IntelligencePage() {
   const partners = asRows(payload.calibration_partners)
   const signals = asRows(payload.signals)
   const brief = asRecord(payload.latest_brief)
-  const settings = asRecord(payload.settings)
   const canRefresh = workspace.membership.role === 'admin' || workspace.membership.role === 'manager'
-  const canSettings = workspace.membership.role === 'admin' || workspace.permissions.includes('settings_manage')
   const formulasConfigured = dimensions.filter((row) => row.formula_configured === true).length
   const scoredPartners = amount(coverage.v6_scored_partners)
   const totalPartners = amount(coverage.partners)
@@ -87,7 +84,6 @@ export default async function IntelligencePage() {
   ]
   const calibrationRows = partners.slice(0, 30)
   const latestBriefExists = Boolean(brief.id)
-  const aiEnabled = settings.ai_enabled === true
 
   return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}>
     <PageHeading eyebrow="VETRO Intelligence" title="Método V6 e inteligência comercial" context="Método proprietário, cobertura de dados, sinais objetivos e interpretação executiva">
@@ -135,12 +131,12 @@ export default async function IntelligencePage() {
     <section className={styles.analysisGrid}>
       <article className={styles.panel}>
         <header><div><span>ATENÇÃO AGORA</span><h2>Sinais determinísticos</h2></div><Link href="/acoes">Abrir execução</Link></header>
-        {signals.length ? <div className={styles.signalList}>{signals.slice(0,8).map((signal) => <article key={text(signal.id)}><div><span className={`${styles.severity} ${styles[text(signal.severity,'info')]}`}>{severityLabel(signal.severity)}</span><small>{text(signal.category)}</small></div><b>{text(signal.title)}</b><p>{text(signal.message)}</p>{signal.recommended_action ? <span><strong>Próximo passo:</strong> {text(signal.recommended_action)}</span> : null}</article>)}</div> : <div className={styles.emptyState}><ShieldCheck size={18}/><div><b>Nenhum sinal persistido agora</b><span>O motor é determinístico e só grava alertas depois de uma atualização do diagnóstico. Ele não depende da OpenAI para identificar aging, queda de conversão ou parceiros que esfriaram.</span></div></div>}
+        {signals.length ? <div className={styles.signalList}>{signals.slice(0,8).map((signal) => <article key={text(signal.id)}><div><span className={`${styles.severity} ${styles[text(signal.severity,'info')]}`}>{severityLabel(signal.severity)}</span><small>{text(signal.category)}</small></div><b>{text(signal.title)}</b><p>{text(signal.message)}</p>{signal.recommended_action ? <span><strong>Próximo passo:</strong> {text(signal.recommended_action)}</span> : null}</article>)}</div> : <div className={styles.emptyState}><ShieldCheck size={18}/><div><b>Nenhum sinal persistido agora</b><span>Os alertas são calculados por regras objetivas da operação e só aparecem quando existe evidência suficiente no período analisado.</span></div></div>}
       </article>
 
       <article className={`${styles.panel} ${styles.aiPanel}`}>
-        <header><div><span>VETRO AI</span><h2>Interpretação executiva</h2></div><Sparkles size={17}/></header>
-        {latestBriefExists ? <><p className={styles.brief}>{text(brief.executive_summary,'Briefing gerado sem resumo textual.')}</p><div className={styles.briefMeta}><span>{text(brief.model,'OpenAI')}</span><span>{brief.generated_at ? dateTime.format(new Date(String(brief.generated_at))) : 'gerado recentemente'}</span></div><Link className={styles.textLink} href="/acoes">Transformar recomendações em execução <ArrowUpRight size={13}/></Link></> : <div className={styles.aiEmpty}><Sparkles size={20}/><div><b>{aiEnabled ? 'IA habilitada, sem briefing gerado' : 'VETRO AI ainda está desligada'}</b><span>{aiEnabled ? 'Gere uma leitura executiva para interpretar o cockpit calculado pelo banco.' : 'A inteligência determinística continua funcionando. A OpenAI só entra quando a incorporadora ativa a camada de interpretação e o segredo de servidor está configurado.'}</span></div>{aiEnabled ? <AiBriefButton companyId={workspace.company.id} dateFrom={dateFrom} dateTo={dateTo}/> : canSettings ? <Link className={styles.configLink} href="/admin/intelligence">Configurar VETRO AI <ArrowUpRight size={13}/></Link> : null}</div>}
+        <header><div><span>VETRO INTELLIGENCE</span><h2>Leitura executiva</h2></div><Sparkles size={17}/></header>
+        {latestBriefExists ? <><p className={styles.brief}>{text(brief.executive_summary,'Leitura executiva sem resumo textual.')}</p><div className={styles.briefMeta}>{brief.generated_at ? <span>Atualizado em {dateTime.format(new Date(String(brief.generated_at)))}</span> : null}</div><Link className={styles.textLink} href="/acoes">Transformar recomendações em execução <ArrowUpRight size={13}/></Link></> : <div className={styles.aiEmpty}><Sparkles size={20}/><div><b>Nenhuma leitura executiva publicada</b><span>Os sinais objetivos e o Método V6 continuam disponíveis. Leituras executivas são publicadas pelo time VETRO quando aplicável.</span></div></div>}
       </article>
     </section>
 
