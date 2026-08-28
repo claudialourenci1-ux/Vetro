@@ -1,4 +1,4 @@
-import { Activity, ArrowLeft, ArrowUpRight, BadgeCheck, BriefcaseBusiness, CircleGauge, Clock3, Network, Sparkles, UsersRound } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AppShell, PageHeading } from '../../_components/app-shell'
@@ -106,7 +106,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
     attentionCopy = `${integer.format(opportunityCount)} oportunidade${opportunityCount === 1 ? '' : 's'} registrada${opportunityCount === 1 ? '' : 's'} e nenhuma venda vinculada ao parceiro até agora.`
   }
 
-  const relationshipMetrics = [
+  const relationshipMetrics: Array<[string, unknown]> = [
     ['Atendimentos', partner.partner_service_count],
     ['Treinamentos', partner.training_count],
     ['Plantões', partner.duty_participation_count],
@@ -114,6 +114,10 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
     ['Propostas', partner.proposal_count],
     ['Vendas no snapshot', partner.snapshot_sale_count],
   ]
+  const v6Dimensions: Array<[string, unknown]> = latestV6Row ? [
+    ['V1',latestV6Row.v1_score],['V2',latestV6Row.v2_score],['V3',latestV6Row.v3_score],
+    ['V4',latestV6Row.v4_score],['V5',latestV6Row.v5_score],['V6',latestV6Row.v6_score],
+  ] : []
 
   return <AppShell companyName={workspace.company.name} role={workspace.membership.role} permissions={workspace.permissions}>
     <PageHeading eyebrow="Parceiro 360" title={text(partner.name, 'Parceiro')} context={`${text(partner.portfolio_name, 'Sem carteira')} · ${text(partner.manager_name, 'sem responsável')}`}>
@@ -138,9 +142,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
 
     <section className={styles.detailGrid}>
       <article className={styles.panel}>
-        <header><div><span>RELACIONAMENTO</span><h2>Índice de Atividade Comercial</h2></div><small>não é V6</small></header>
+        <header><div><span>RELACIONAMENTO</span><h2>Índice de Atividade Comercial</h2></div><small>{latestSnapshot?.snapshot_date ? `snapshot ${shortDate.format(new Date(String(latestSnapshot.snapshot_date)))} · não é V6` : 'não é V6'}</small></header>
         <div className={styles.relationshipLead}><div className={styles.relationshipScore}>{legacyScore === null ? '—' : decimal.format(legacyScore)}</div><div><b>Leitura operacional preservada</b><span>Resume a atividade de relacionamento capturada no último snapshot disponível. O V6 é uma camada proprietária separada.</span></div></div>
-        <div className={styles.scoreGrid}>{relationshipMetrics.map(([metric, value]) => <div key={String(metric)}><span>{metric}</span><b>{integer.format(amount(value))}</b></div>)}</div>
+        <div className={styles.scoreGrid}>{relationshipMetrics.map(([metric, value]) => <div key={metric}><span>{metric}</span><b>{integer.format(amount(value))}</b></div>)}</div>
       </article>
 
       <article className={styles.panel}>
@@ -169,7 +173,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
 
       {canV6 ? <article className={styles.panel}>
         <header><div><span>VETRO SCORE</span><h2>Leitura V6</h2></div><small>{v6History.length ? 'histórico disponível' : 'calibração'}</small></header>
-        {latestV6Row ? <><div className={styles.v6Score}><strong>{decimal.format(amount(latestV6Row.overall_score))}</strong><div><b>Score geral do último período</b><span>{text(latestV6Row.period_start)} → {text(latestV6Row.period_end)}</span></div></div><div className={styles.scoreGrid}>{[['V1',latestV6Row.v1_score],['V2',latestV6Row.v2_score],['V3',latestV6Row.v3_score],['V4',latestV6Row.v4_score],['V5',latestV6Row.v5_score],['V6',latestV6Row.v6_score]].map(([key,value]) => <div key={String(key)}><span>{key}</span><b>{value === null || value === undefined ? '—' : decimal.format(amount(value))}</b></div>)}</div></> : <div className={styles.v6Empty}><Sparkles size={18}/><div><b>V6 ainda não publicado para este parceiro</b><span>A estrutura está pronta, mas nenhuma nota artificial é criada enquanto a calibração metodológica não estiver concluída.</span></div></div>}
+        {latestV6Row ? <><div className={styles.v6Score}><strong>{decimal.format(amount(latestV6Row.overall_score))}</strong><div><b>Score geral do último período</b><span>{text(latestV6Row.period_start)} → {text(latestV6Row.period_end)}</span></div></div><div className={styles.scoreGrid}>{v6Dimensions.map(([key,value]) => <div key={key}><span>{key}</span><b>{value === null || value === undefined ? '—' : decimal.format(amount(value))}</b></div>)}</div></> : <div className={styles.v6Empty}><Sparkles size={18}/><div><b>V6 ainda não publicado para este parceiro</b><span>A estrutura está pronta, mas nenhuma nota artificial é criada enquanto a calibração metodológica não estiver concluída.</span></div></div>}
       </article> : null}
     </section> : null}
   </AppShell>
