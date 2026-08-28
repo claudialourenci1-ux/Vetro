@@ -21,6 +21,12 @@ type WorkspaceContextRow = {
   membership_active: boolean
 }
 
+type WorkspaceRpcClient = {
+  rpc: (
+    fn: 'get_my_workspace_context',
+  ) => Promise<{ data: WorkspaceContextRow[] | null; error: { message: string } | null }>
+}
+
 export type CompanyWorkspace = {
   company: CompanyRelation
   membership: {
@@ -33,11 +39,9 @@ export type CompanyWorkspace = {
 export async function getCompanyWorkspace(): Promise<CompanyWorkspace | null> {
   const { supabase } = await requireAuthenticatedUser()
 
-  const rpc = supabase.rpc as unknown as (
-    fn: 'get_my_workspace_context',
-  ) => Promise<{ data: WorkspaceContextRow[] | null; error: { message: string } | null }>
-
-  const { data: contextRows, error } = await rpc('get_my_workspace_context')
+  const { data: contextRows, error } = await (supabase as unknown as WorkspaceRpcClient).rpc(
+    'get_my_workspace_context',
+  )
   const context = contextRows?.[0]
 
   if (error || !context || !context.membership_active) return null
