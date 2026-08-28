@@ -12,6 +12,19 @@ VETRO is a B2B SaaS for commercial intelligence and sales management for real-es
 - Never expose service-role keys or OpenAI API keys to the browser.
 - Database-calculated commercial metrics are authoritative. AI may interpret them but must not become the source of truth for KPIs.
 
+## Public website / Runable
+The official VETRO public marketing website is designed and maintained in **Runable**. Runable is the visual source of truth for the public landing page.
+
+Rules for Codex:
+- Do not redesign, recreate, replace, or visually reinterpret the official public landing page inside this repository unless the user explicitly asks to import or synchronize an approved Runable version.
+- Do not treat `src/app/_components/landing-page.tsx` or any other in-repository public landing implementation as the authoritative public design. If such code exists, treat it as fallback/legacy/technical scaffolding unless explicitly promoted by the user.
+- Public-page visual changes belong in Runable first.
+- Do not invent public-page mockups, dashboard screenshots, hero assets, cases, logos, or decorative product UI. Use only approved assets supplied by the user or exported from Runable.
+- The VETRO application repository remains responsible for the authenticated product, login/authentication flows, Supabase integration, commercial intelligence, permissions, backend, and any technical route/domain integration required to connect the public site to the product.
+- Preserve a clear `Entrar` / login path from the public experience to the authenticated VETRO product.
+- If an approved Runable export is later added to this repository, preserve its approved layout and visual identity rather than redesigning it.
+- If a task mentions “landing”, “home pública”, “site público” or “página de vendas”, first assume it refers to the Runable project unless the user explicitly says otherwise.
+
 ## Stack
 - Next.js App Router
 - TypeScript strict mode
